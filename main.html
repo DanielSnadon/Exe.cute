@@ -245,19 +245,43 @@
             /* Чтобы линии не выходили за круг */
         }
 
-        #travel-map #progress-line {
+        #travel-map .map-path {
             position: absolute;
-            height: 8px;
-            /* Чуть толще */
-            background-color: #4CAF50;
-            /* Цвет прогресса */
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px dashed #80a0c0;
+            /* Пунктирная "дорога" */
+            box-sizing: border-box;
+            /* Чтобы граница не увеличивала размер */
+            animation: rotatePath 20s linear infinite;
+            /* Анимация вращения пути */
+        }
+
+        #travel-map .map-person-dot {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #ff0000;
+            /* Красная точка для человека */
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            /* Центрируем точку */
+            /* Начальная позиция, будет меняться через JS */
             top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            width: 0%;
-            /* Начальная ширина 0 */
-            transition: width 0.1s linear;
-            /* Плавное изменение ширины */
+            left: 0%;
+            z-index: 10;
+        }
+
+        /* Анимация вращения карты */
+        @keyframes rotatePath {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Модальное окно для событий */
@@ -313,6 +337,71 @@
         .event-modal-content .options button:hover {
             background-color: #007bb5;
         }
+
+        /* Стили для магазина */
+        #shop-tab {
+            text-align: center;
+        }
+
+        .shop-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .shop-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .shop-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .shop-item.purchased {
+            background-color: #e0ffe0;
+            /* Светло-зеленый фон для купленных */
+            border-color: #a0ffa0;
+        }
+
+        .shop-item h4 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        .shop-item .price {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .shop-item .buy-button {
+            padding: 8px 15px;
+            background-color: #28a745;
+            /* Зеленая кнопка покупки */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        .shop-item .buy-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .shop-item .buy-button:hover:not(:disabled) {
+            background-color: #218838;
+        }
     </style>
 </head>
 
@@ -327,10 +416,10 @@
 
         <div id="main-tab" class="tab-content active">
             <h2>Главная</h2>
-            <div class="person-image">Человек</div>
+            <div class="person-image" style="background-color: #ccc;">Человек</div>
             <div id="travel-map">
-                Карта
-                <div id="progress-line"></div>
+                <div class="map-path"></div>
+                <div class="map-person-dot"></div>
             </div>
             <div class="main-buttons">
                 <button id="send-on-travel-button">Отправить в путешествие</button>
@@ -353,7 +442,15 @@
 
         <div id="shop-tab" class="tab-content">
             <h2>Магазин</h2>
-            <p>Здесь можно будет потратить монеты на кастомизацию персонажа и промокоды.</p>
+            <p>Ваш баланс: <span id="shop-coins">0</span> монет</p>
+            <h3>Кастомизация персонажа</h3>
+            <div class="shop-items" id="character-customization-items">
+            </div>
+            <h3>Промокоды</h3>
+            <p>Введите промокод:</p>
+            <input type="text" id="promo-code-input" placeholder="Промокод">
+            <button id="activate-promo-button">Активировать</button>
+            <p id="promo-message" style="color: red;"></p>
         </div>
     </div>
 
@@ -366,37 +463,48 @@
     </div>
 
     <script>
-        // Получаем ссылки на элементы DOM
+        // --- Получаем ссылки на элементы DOM ---
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         const sendOnTravelButton = document.getElementById('send-on-travel-button');
         const viewAlbumButton = document.getElementById('view-album-button');
         const personImage = document.querySelector('.person-image');
         const travelMap = document.getElementById('travel-map');
-        const progressLine = document.getElementById('progress-line'); // Линия прогресса
+        const mapPersonDot = document.querySelector('.map-person-dot'); // Точка на карте
         const travelLocationsList = document.getElementById('travel-locations');
         const coinsDisplay = document.getElementById('coins');
+        const shopCoinsDisplay = document.getElementById('shop-coins'); // Для отображения монет в магазине
         const albumGrid = document.getElementById('album-grid');
 
         const eventModal = document.getElementById('event-modal');
         const eventQuestion = document.getElementById('event-question');
         const eventOptions = document.getElementById('event-options');
 
-        // Глобальные переменные состояния игры
+        const characterCustomizationItems = document.getElementById('character-customization-items');
+        const promoCodeInput = document.getElementById('promo-code-input');
+        const activatePromoButton = document.getElementById('activate-promo-button');
+        const promoMessage = document.getElementById('promo-message');
+
+        // --- Глобальные переменные состояния игры ---
         let currentCoins = 0;
         let isTraveling = false;
-        let travelTimerIntervalId; // Теперь храним ID интервала
-        let timeRemaining; // Оставшееся время путешествия
-        let travelSpeedMultiplier = 1; // Множитель скорости путешествия (1 = нормальная скорость)
-        let currentTravelLocation = null; // Текущее место путешествия
-        let initialTravelDuration; // Исходная длительность для расчета прогресса
+        let travelTimerIntervalId;
+        let timeRemaining;
+        let travelSpeedMultiplier = 1;
+        let currentTravelLocation = null;
+        let initialTravelDuration;
+
+        // Состояние кастомизации
+        let currentPersonColor = '#ccc'; // Изначальный цвет человека
+        let ownedItems = []; // Купленные предметы
+
+        // --- Данные игры ---
 
         // Определение мест для путешествий
-        // Каждое место имеет ID, название, длительность (в миллисекундах) и награду монетами
         const locations = [
-            { id: 'lake-bright', name: 'Озеро Светлое', duration: 15000, reward: 50, visits: 0, image: 'Озеро' }, // 15 секунд
-            { id: 'forest-path', name: 'Лесная Тропа', duration: 20000, reward: 75, visits: 0, image: 'Лес' }, // 20 секунд
-            { id: 'mountain-peak', name: 'Горный Пик', duration: 25000, reward: 100, locked: true, visits: 0, image: 'Горы' }, // Изначально заблокировано
+            { id: 'lake-bright', name: 'Озеро Светлое', duration: 15000, reward: 50, visits: 0, image: 'Озеро' },
+            { id: 'forest-path', name: 'Лесная Тропа', duration: 20000, reward: 75, visits: 0, image: 'Лес' },
+            { id: 'mountain-peak', name: 'Горный Пик', duration: 25000, reward: 100, locked: true, unlockRequirement: { locationId: 'lake-bright', visits: 2 }, visits: 0, image: 'Горы' },
         ];
 
         // Определение возможных событий во время путешествия
@@ -404,25 +512,94 @@
             {
                 question: 'На вашем пути преграда. Как поступите?',
                 options: [
-                    { text: 'Обойду быстро', correct: true, speedChange: 2.0 }, // Ускоряет в 2 раза
-                    { text: 'Изучу внимательно', correct: false, speedChange: 0.5 } // Замедляет в 2 раза
+                    { text: 'Обойду быстро', correct: true, speedChange: 2.0 },
+                    { text: 'Изучу внимательно', correct: false, speedChange: 0.5 }
                 ]
             },
             {
                 question: 'Вы встретили странного путника. Как отреагируете?',
                 options: [
-                    { text: 'Поздороваюсь', correct: true, speedChange: 1.5 }, // Ускоряет на 50%
-                    { text: 'Проигнорирую', correct: false, speedChange: 0.7 } // Замедляет на 30%
+                    { text: 'Поздороваюсь', correct: true, speedChange: 1.5 },
+                    { text: 'Проигнорирую', correct: false, speedChange: 0.7 }
                 ]
             },
             {
                 question: 'Погода портится. Ваши действия?',
                 options: [
-                    { text: 'Укроюсь и подожду', correct: false, speedChange: 0.6 }, // Замедляет на 40%
-                    { text: 'Продолжу путь', correct: true, speedChange: 2.5 } // Ускоряет в 2.5 раза
+                    { text: 'Укроюсь и подожду', correct: false, speedChange: 0.6 },
+                    { text: 'Продолжу путь', correct: true, speedChange: 2.5 }
                 ]
             }
         ];
+
+        // Предметы для кастомизации (цвета персонажа)
+        const customizationItems = [
+            { id: 'color-red', name: 'Красный цвет', type: 'color', value: '#ff0000', price: 100 },
+            { id: 'color-blue', name: 'Синий цвет', type: 'color', value: '#0000ff', price: 150 },
+            { id: 'color-green', name: 'Зеленый цвет', type: 'color', value: '#008000', price: 120 },
+            { id: 'color-purple', name: 'Фиолетовый цвет', type: 'color', value: '#800080', price: 180 },
+        ];
+
+        // Промокоды
+        const promoCodes = {
+            'FREECASH100': { type: 'coins', amount: 100, redeemed: false, message: 'Вы получили 100 монет!' },
+            'SUPERFAST': { type: 'speed_boost', amount: 0.5, redeemed: false, message: 'Ваши следующие 2 путешествия будут на 50% быстрее!' }
+        };
+        let speedBoostsRemaining = 0; // Для промокода на ускорение
+
+        // --- Функции LocalStorage (База данных) ---
+
+        function saveGameData() {
+            const gameData = {
+                coins: currentCoins,
+                locations: locations.map(loc => ({ id: loc.id, visits: loc.visits, locked: loc.locked })),
+                currentPersonColor: currentPersonColor,
+                ownedItems: ownedItems,
+                promoCodes: Object.fromEntries(Object.entries(promoCodes).map(([key, value]) => [key, { ...value, redeemed: value.redeemed }])), // Сохраняем состояние промокодов
+                speedBoostsRemaining: speedBoostsRemaining
+            };
+            localStorage.setItem('travelSimulatorGame', JSON.stringify(gameData));
+            console.log('Данные сохранены:', gameData);
+        }
+
+        function loadGameData() {
+            const savedData = localStorage.getItem('travelSimulatorGame');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+                currentCoins = gameData.coins || 0;
+
+                // Восстанавливаем посещения и состояние блокировки мест
+                if (gameData.locations) {
+                    gameData.locations.forEach(savedLoc => {
+                        const loc = locations.find(l => l.id === savedLoc.id);
+                        if (loc) {
+                            loc.visits = savedLoc.visits;
+                            // Если место было разблокировано в сохраненных данных, оно остаётся разблокированным
+                            if (savedLoc.hasOwnProperty('locked')) { // Проверяем наличие свойства 'locked'
+                                loc.locked = savedLoc.locked;
+                            }
+                        }
+                    });
+                }
+
+                currentPersonColor = gameData.currentPersonColor || '#ccc';
+                personImage.style.backgroundColor = currentPersonColor; // Применяем загруженный цвет
+
+                ownedItems = gameData.ownedItems || [];
+
+                // Восстанавливаем состояние промокодов
+                if (gameData.promoCodes) {
+                    for (const code in gameData.promoCodes) {
+                        if (promoCodes[code]) {
+                            promoCodes[code].redeemed = gameData.promoCodes[code].redeemed;
+                        }
+                    }
+                }
+                speedBoostsRemaining = gameData.speedBoostsRemaining || 0;
+
+                console.log('Данные загружены:', gameData);
+            }
+        }
 
         // --- Инициализация элементов DOM ---
 
@@ -440,9 +617,13 @@
                 if (loc.locked) {
                     buttonText = 'Заблокировано';
                     buttonDisabled = 'disabled';
-                    const remainingVisits = 2 - lakeBright.visits;
-                    if (remainingVisits > 0) {
-                        lockedInfo = `(Требуется ${remainingVisits} посещени${remainingVisits === 1 ? 'е' : 'я'} Озера Светлого)`;
+                    if (loc.unlockRequirement && loc.unlockRequirement.locationId === 'lake-bright') {
+                        const requiredVisits = loc.unlockRequirement.visits;
+                        const currentVisits = lakeBright ? lakeBright.visits : 0;
+                        const remainingVisits = requiredVisits - currentVisits;
+                        if (remainingVisits > 0) {
+                            lockedInfo = `(Требуется ${remainingVisits} посещени${remainingVisits === 1 ? 'е' : 'я'} Озера Светлого)`;
+                        }
                     }
                 }
 
@@ -451,6 +632,31 @@
                     <button data-location="${loc.id}" ${buttonDisabled}>${buttonText}</button>
                 `;
                 travelLocationsList.appendChild(li);
+            });
+        }
+
+        // Заполняем магазин
+        function populateShopItems() {
+            characterCustomizationItems.innerHTML = '';
+            customizationItems.forEach(item => {
+                const isOwned = ownedItems.includes(item.id);
+                const isEquipped = currentPersonColor === item.value; // Проверяем, если цвет уже активен
+                const itemClass = isOwned ? 'shop-item purchased' : 'shop-item';
+                const buttonText = isEquipped ? 'Надето' : (isOwned ? 'Надеть' : 'Купить');
+                const buttonDisabled = isEquipped ? 'disabled' : '';
+
+                const div = document.createElement('div');
+                div.className = itemClass;
+                div.innerHTML = `
+                    <h4>${item.name}</h4>
+                    <div style="width: 50px; height: 50px; background-color: ${item.value}; border-radius: 50%; margin: 0 auto 10px;"></div>
+                    <p class="price">${isOwned ? 'Куплено' : item.price + ' монет'}</p>
+                    <button class="buy-button" data-item-id="${item.id}" ${buttonDisabled}>${buttonText}</button>
+                `;
+                characterCustomizationItems.appendChild(div);
+
+                const buyButton = div.querySelector('.buy-button');
+                buyButton.addEventListener('click', () => handleShopPurchase(item));
             });
         }
 
@@ -478,6 +684,12 @@
                 travelMap.style.display = 'none';
                 sendOnTravelButton.disabled = false; // Всегда разблокирована, если не в путешествии
             }
+
+            // Обновляем отображение монет в магазине при переключении
+            if (tabId === 'shop-tab') {
+                shopCoinsDisplay.textContent = currentCoins;
+                populateShopItems(); // Обновляем список предметов в магазине
+            }
         }
 
         // --- Функции для путешествий ---
@@ -490,19 +702,27 @@
                 return;
             }
 
-            // Обновляем линию прогресса
             // Время уменьшается с учетом множителя скорости
             timeRemaining -= 100 * travelSpeedMultiplier; // Уменьшаем время с учетом скорости
 
             // Убеждаемся, что время не ушло в минус при расчете прогресса
             const effectiveTimeRemaining = Math.max(0, timeRemaining);
-            const progressPercentage = ((initialTravelDuration - effectiveTimeRemaining) / initialTravelDuration) * 100;
-            progressLine.style.width = `${progressPercentage}%`;
+            const progress = (initialTravelDuration - effectiveTimeRemaining) / initialTravelDuration;
+
+            // Анимация точки по кругу
+            const angle = progress * 2 * Math.PI; // Угол в радианах
+            const radius = travelMap.clientWidth / 2; // Радиус круга карты
+            const dotX = radius + radius * Math.cos(angle - Math.PI / 2); // -Math.PI/2 чтобы начать сверху
+            const dotY = radius + radius * Math.sin(angle - Math.PI / 2);
+
+            mapPersonDot.style.left = `${dotX}px`;
+            mapPersonDot.style.top = `${dotY}px`;
+
 
             // Проверка на событие: только если не было запланировано и время в нужных рамках
             // И событие не должно быть активно (модальное окно скрыто)
-            // Шанс события: примерно 5% от оставшегося времени каждый 100мс
-            if (!eventModal.classList.contains('active') && Math.random() < 0.05 && timeRemaining > initialTravelDuration * 0.2 && timeRemaining < initialTravelDuration * 0.8) {
+            // Шанс события: 1% от оставшегося времени каждые 100мс
+            if (!eventModal.classList.contains('active') && Math.random() < 0.01 && timeRemaining > initialTravelDuration * 0.2 && timeRemaining < initialTravelDuration * 0.8) {
                 clearInterval(travelTimerIntervalId); // Останавливаем таймер для события
                 showEvent();
                 return; // Выходим, чтобы таймер не продолжал отсчет
@@ -519,11 +739,20 @@
             timeRemaining = initialTravelDuration;
             travelSpeedMultiplier = 1; // Сброс скорости
 
+            // Применяем бонус скорости от промокода, если есть
+            if (speedBoostsRemaining > 0) {
+                travelSpeedMultiplier *= 1.5; // Пример: 50% быстрее
+                speedBoostsRemaining--; // Используем один заряд
+                alert('Активирован бонус скорости!');
+            }
+
+
             // Обновляем видимость элементов и состояние кнопки
             switchTab('main-tab'); // Автоматически переключаем на главную вкладку и обновляем UI
 
             // Запускаем таймер
             travelTimerIntervalId = setInterval(updateTravelProgress, 100); // Обновляем каждые 100мс
+            saveGameData(); // Сохраняем состояние игры при начале путешествия
         }
 
         // Отображение модального окна события
@@ -547,17 +776,15 @@
         function handleEventChoice(isCorrect, speedChange) {
             if (isCorrect) {
                 travelSpeedMultiplier *= speedChange; // Ускоряем
-                alert(`Отличный выбор! Вы ускоряетесь в ${speedChange} раз!`); // Обновленное сообщение
+                alert('Отличный выбор! Вы ускоряетесь!');
             } else {
                 travelSpeedMultiplier *= speedChange; // Замедляем
-                alert(`Не лучший выбор. Вы замедляетесь в ${1 / speedChange} раз!`); // Обновленное сообщение
+                alert('Не лучший выбор. Вы замедляетесь!');
             }
             eventModal.style.display = 'none'; // Скрываем модальное окно
             eventModal.classList.remove('active'); // Удаляем активный класс
 
-            // Продолжаем отсчет времени тем же самым интервалом, который был остановлен.
-            // Если он уже остановлен, то запускаем заново.
-            travelTimerIntervalId = setInterval(updateTravelProgress, 100);
+            travelTimerIntervalId = setInterval(updateTravelProgress, 100); // Возобновляем таймер
         }
 
 
@@ -565,7 +792,8 @@
         function endTravel(locationId) {
             isTraveling = false;
             travelSpeedMultiplier = 1; // Сброс скорости
-            progressLine.style.width = '0%'; // Сброс прогресс-бара
+            mapPersonDot.style.left = '0%'; // Сброс положения точки
+            mapPersonDot.style.top = '50%';
 
             // Обновляем видимость элементов и состояние кнопки
             switchTab('main-tab'); // Переключаем на главную вкладку и обновляем UI
@@ -583,17 +811,21 @@
 
             // Добавляем карточку в альбом
             addAlbumCard(location.name, location.image);
+
+            saveGameData(); // Сохраняем состояние игры после завершения путешествия
         }
 
         // Проверка и разблокировка новых мест
         function checkUnlockNewLocations() {
-            const lakeBright = locations.find(loc => loc.id === 'lake-bright');
-            const mountainPeak = locations.find(loc => loc.id === 'mountain-peak');
-
-            if (mountainPeak.locked && lakeBright.visits >= 2) { // Проверяем, если Горный Пик еще заблокирован и условие выполнено
-                mountainPeak.locked = false;
-                alert('Поздравляем! Вы разблокировали новое место: Горный Пик!');
-            }
+            locations.forEach(loc => {
+                if (loc.locked && loc.unlockRequirement) {
+                    const requiredLoc = locations.find(l => l.id === loc.unlockRequirement.locationId);
+                    if (requiredLoc && requiredLoc.visits >= loc.unlockRequirement.visits) {
+                        loc.locked = false;
+                        alert(`Поздравляем! Вы разблокировали новое место: ${loc.name}!`);
+                    }
+                }
+            });
             populateTravelLocations(); // Всегда обновляем список, чтобы обновить текст, если место разблокировано или изменился счетчик посещений
         }
 
@@ -612,6 +844,71 @@
             // albumItem.appendChild(img);
             albumGrid.appendChild(albumItem);
         }
+
+        // --- Функции магазина ---
+
+        function handleShopPurchase(item) {
+            const isOwned = ownedItems.includes(item.id);
+            const buyButton = document.querySelector(`.buy-button[data-item-id="${item.id}"]`);
+
+            if (isOwned) {
+                // Если предмет уже куплен, его можно "надеть" (использовать)
+                if (item.type === 'color') {
+                    currentPersonColor = item.value;
+                    personImage.style.backgroundColor = currentPersonColor;
+                    alert(`Вы надели ${item.name}!`);
+                    populateShopItems(); // Обновить магазин, чтобы кнопка "Надето" стала неактивной
+                    saveGameData();
+                }
+            } else {
+                // Если предмет не куплен, пытаемся купить
+                if (currentCoins >= item.price) {
+                    currentCoins -= item.price;
+                    coinsDisplay.textContent = currentCoins;
+                    shopCoinsDisplay.textContent = currentCoins; // Обновляем баланс в магазине
+                    ownedItems.push(item.id); // Добавляем в список купленных
+                    alert(`Вы купили ${item.name}!`);
+                    populateShopItems(); // Обновляем магазин, чтобы предмет стал "Куплено"
+                    saveGameData();
+                    // Если это цвет, надеваем его сразу
+                    if (item.type === 'color') {
+                        currentPersonColor = item.value;
+                        personImage.style.backgroundColor = currentPersonColor;
+                    }
+                } else {
+                    alert('Недостаточно монет для покупки!');
+                }
+            }
+        }
+
+        // Активация промокода
+        activatePromoButton.addEventListener('click', () => {
+            const code = promoCodeInput.value.trim().toUpperCase();
+            const promo = promoCodes[code];
+
+            if (promo) {
+                if (!promo.redeemed) {
+                    if (promo.type === 'coins') {
+                        currentCoins += promo.amount;
+                        coinsDisplay.textContent = currentCoins;
+                        shopCoinsDisplay.textContent = currentCoins;
+                    } else if (promo.type === 'speed_boost') {
+                        speedBoostsRemaining += 2; // Даем 2 заряда ускорения
+                    }
+                    promo.redeemed = true; // Помечаем как использованный
+                    promoMessage.style.color = 'green';
+                    promoMessage.textContent = promo.message;
+                    saveGameData(); // Сохраняем состояние промокода
+                } else {
+                    promoMessage.style.color = 'red';
+                    promoMessage.textContent = 'Этот промокод уже был использован.';
+                }
+            } else {
+                promoMessage.style.color = 'red';
+                promoMessage.textContent = 'Неверный промокод.';
+            }
+            promoCodeInput.value = ''; // Очищаем поле ввода
+        });
 
 
         // --- Обработчики событий ---
@@ -641,22 +938,25 @@
                 startTravel(locationId);
             } else if (event.target.tagName === 'BUTTON' && event.target.disabled) {
                 // Предотвращаем отправку, если кнопка заблокирована
-                alert('Это место заблокировано. Посетите Озеро Светлое 2 раза, чтобы разблокировать.');
+                const loc = locations.find(l => l.id === event.target.dataset.location);
+                if (loc && loc.unlockRequirement) {
+                    const requiredLoc = locations.find(l => l.id === loc.unlockRequirement.locationId);
+                    const remainingVisits = loc.unlockRequirement.visits - (requiredLoc ? requiredLoc.visits : 0);
+                    alert(`Это место заблокировано. Посетите ${requiredLoc.name} ещё ${remainingVisits} раз, чтобы разблокировать.`);
+                } else {
+                    alert('Это место заблокировано.');
+                }
             }
         });
 
 
         // --- Инициализация при загрузке страницы ---
-
-        // Инициализация: убедимся, что главная вкладка активна при загрузке
-        switchTab('main-tab');
-
-        // Обновляем отображение монет при старте
-        coinsDisplay.textContent = currentCoins;
-
-        // Заполняем список мест для путешествий при загрузке
-        populateTravelLocations();
-
+        loadGameData(); // Загружаем данные при старте
+        switchTab('main-tab'); // Убедимся, что главная вкладка активна при загрузке
+        coinsDisplay.textContent = currentCoins; // Обновляем отображение монет
+        populateTravelLocations(); // Заполняем список мест для путешествий при загрузке
+        populateShopItems(); // Заполняем магазин при загрузке
+        personImage.style.backgroundColor = currentPersonColor; // Устанавливаем текущий цвет персонажа
     </script>
 </body>
 
