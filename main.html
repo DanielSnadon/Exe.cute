@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор Путешествий</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100vw;
+            max-width: 900px;
+            height: calc(100vw * 9 / 16);
+            max-height: 100vh;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0 0 0 / 20%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (max-height: 100vh) {
+            #game-container {
+                height: 100vh;
+                width: calc(100vh * 16 / 9);
+            }
+        }
+
+        /* Убираем верхние табы, так как теперь есть кнопки снизу */
+        .tabs {
+            display: none;
+        }
+
+        /* --- Главная вкладка --- */
+        #main-tab {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* Распределяем содержимое по вертикали */
+            align-items: center;
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+            /* Учитываем padding в размере */
+        }
+
+        #main-tab h2 {
+            display: none;
+            /* Скрываем заголовок "Главная" */
+        }
+
+        #coins-display-top-right {
+            /* Новый контейнер для монет */
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(0 0 0 / 60%);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 500;
+            /* Чтобы было поверх других элементов, но под модальными окнами */
+        }
+
+        #time-remaining-display {
+            background-color: rgba(0 0 0 / 60%);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            display: none;
+            /* Скрыто по умолчанию, показываем только в путешествии */
+            margin-top: 15px;
+            /* Отступ от карты */
+            z-index: 1;
+        }
+
+        .person-container {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto 10px;
+            /* Уменьшаем нижний отступ */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .person-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9em;
+            color: #666;
+            border: 2px solid #aaa;
+            box-shadow: inset 0 0 5px rgba(0 0 0 / 10%);
+        }
+
+        .person-layer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* --- Кнопки внизу экрана --- */
+        .bottom-buttons-container {
+            display: flex;
+            justify-content: space-between;
+            /* Распределяем кнопки */
+            align-items: flex-end;
+            /* Выравниваем по низу */
+            width: 100%;
+            padding: 0 15px 15px;
+            /* Отступы снизу и по бокам */
+            box-sizing: border-box;
+            position: relative;
+            /* Для позиционирования основной кнопки */
+        }
+
+        .bottom-buttons-container button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0 0 0 / 10%);
+            min-width: 120px;
+            /* Минимальная ширина для удобства */
+        }
+
+        /* Отдельные стили для кнопок */
+        #view-album-button {
+            /* Слева снизу */
+            background-color: #008CBA;
+        }
+
+        #view-album-button:hover {
+            background-color: #007bb5;
+            transform: translateY(-2px);
+        }
+
+        #send-on-travel-button {
+            /* По центру снизу */
+            background-color: #4CAF50;
+            position: absolute;
+            /* Абсолютное позиционирование для центра */
+            left: 50%;
+            transform: translateX(-50%);
+            /* Центрирование */
+            bottom: 15px;
+            /* Отступ от нижнего края контейнера */
+            z-index: 10;
+            /* Поверх других кнопок */
+        }
+
+        #send-on-travel-button:hover {
+            background-color: #45a049;
+            transform: translateX(-50%) translateY(-2px);
+        }
+
+        #shop-popup-button {
+            /* Справа снизу (бывшая main-buttons button:nth-child(2)) */
+            background-color: #FFA500;
+            /* Оранжевый цвет для магазина */
+        }
+
+        #shop-popup-button:hover {
+            background-color: #e69500;
+            transform: translateY(-2px);
+        }
+
+        #send-on-travel-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* --- Анимация карты --- */
+        #travel-map {
+            width: 300px;
+            height: 150px;
+            background-color: #a0c0e0;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            margin: 20px auto 10px;
+            /* Отступ сверху и снизу */
+            display: none;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #80a0c0;
+            box-shadow: inset 0 0 8px rgba(0 0 0 / 20%);
+        }
+
+        #travel-map .map-person-dot {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            top: 50%;
+            left: 0%;
+            z-index: 10;
+        }
+
+        /* --- Общие стили для ВСЕХ модальных окон (event, confirmation, и новые popups) --- */
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0 0 0 / 60%);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0 0 0 / 30%);
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            animation: modalAppear 0.3s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            max-height: 80%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-content h2,
+        .modal-content h3 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-content .scrollable-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        /* --- Стили для конкретных модальных окон --- */
+
+        #event-modal .options button {
+            display: block;
+            width: 90%;
+            padding: 12px;
+            margin: 10px auto;
+            border: none;
+            border-radius: 8px;
+            background-color: #008CBA;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #event-modal .options button:hover {
+            background-color: #007bb5;
+        }
+
+        #confirmation-modal .confirmation-modal-buttons {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+
+        #confirmation-modal .confirmation-modal-buttons button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0 0 0 / 10%);
+            flex-grow: 1;
+        }
+
+        #confirmation-modal .confirmation-modal-buttons button.confirm-yes {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #confirmation-modal .confirmation-modal-buttons button.confirm-yes:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        #confirmation-modal .confirmation-modal-buttons button.confirm-no {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #confirmation-modal .confirmation-modal-buttons button.confirm-no:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        #travel-popup .travel-locations-list {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
+
+        #travel-popup .travel-locations-list li {
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0 0 0 / 5%);
+        }
+
+        #travel-popup .travel-locations-list li button {
+            padding: 8px 15px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        #travel-popup .travel-locations-list li button:hover {
+            background-color: #4cae4c;
+        }
+
+        #album-popup .album-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #album-popup .album-item {
+            width: 100px;
+            height: 100px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #888;
+            font-size: 0.8em;
+            text-align: center;
+            overflow: hidden;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        #album-popup .album-item img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        #shop-popup .shop-section {
+            margin-bottom: 30px;
+        }
+
+        #shop-popup .shop-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        #shop-popup .shop-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0 0 0 / 5%);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        #shop-popup .shop-item:hover {
+            transform: translateY(-3px);
+        }
+
+        #shop-popup .shop-item.purchased {
+            background-color: #e0ffe0;
+            border-color: #a0ffa0;
+        }
+
+        #shop-popup .shop-item.equipped {
+            background-color: #d0e0ff;
+            border-color: #a0c0ff;
+        }
+
+        #shop-popup .shop-item h4 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        #shop-popup .shop-item .price {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        #shop-popup .shop-item .buy-button {
+            padding: 8px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            margin-top: 5px;
+        }
+
+        #shop-popup .shop-item .buy-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #shop-popup .shop-item .buy-button:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        @keyframes modalAppear {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <div id="main-tab" class="tab-content active">
+            <div id="coins-display-top-right">
+                <span id="coins">0</span> монет
+            </div>
+
+            <div class="person-container">
+                <div class="person-layer" data-layer-type="body" style="background-color: #ccc;">Человек</div>
+                <div class="person-layer" data-layer-type="glasses"></div>
+                <div class="person-layer" data-layer-type="hat"></div>
+            </div>
+            <div id="travel-map">
+                <div class="map-person-dot"></div>
+            </div>
+
+            <div id="time-remaining-display"></div>
+
+            <div class="bottom-buttons-container">
+                <button id="view-album-button" data-tab="album-popup-btn">Альбом</button>
+                <button id="send-on-travel-button" data-tab="travel-popup-btn">Отправить в путешествие</button>
+                <button id="shop-popup-button" data-tab="shop-popup-btn">Магазин</button>
+            </div>
+        </div>
+
+        <div id="event-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3 id="event-question"></h3>
+                <div class="options" id="event-options">
+                </div>
+            </div>
+        </div>
+
+        <div id="confirmation-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3 id="confirmation-question">Вы уверены?</h3>
+                <div class="confirmation-modal-buttons">
+                    <button class="confirm-yes">Да</button>
+                    <button class="confirm-no">Нет</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="travel-popup" class="modal-overlay">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Куда отправимся?</h2>
+                <div class="scrollable-content">
+                    <ul class="travel-locations-list" id="travel-locations-popup">
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="album-popup" class="modal-overlay">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Альбом путешествий</h2>
+                <div class="scrollable-content">
+                    <div class="album-grid" id="album-grid-popup">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="shop-popup" class="modal-overlay">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Магазин</h2>
+                <div class="scrollable-content">
+                    <p>Ваш баланс: <span id="shop-coins-popup">0</span> монет</p>
+
+                    <div class="shop-section">
+                        <h3>Кастомизация персонажа</h3>
+                        <div class="shop-items" id="character-customization-items-popup">
+                        </div>
+                    </div>
+
+                    <div class="shop-section">
+                        <h3>Промокоды для онлайн-сервисов</h3>
+                        <div class="shop-items" id="online-promo-items-popup">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        // --- Получаем ссылки на элементы DOM ---
+        // const tabButtons = document.querySelectorAll('.tab-button'); // Эти кнопки удалены
+        const mainTab = document.getElementById('main-tab');
+
+        // Обновленные ссылки на кнопки внизу
+        const sendOnTravelButton = document.getElementById('send-on-travel-button');
+        const viewAlbumButton = document.getElementById('view-album-button');
+        const shopPopupButton = document.getElementById('shop-popup-button'); // Новая ссылка
+
+        const personContainer = document.querySelector('.person-container');
+        const personBodyLayer = document.querySelector('.person-layer[data-layer-type="body"]');
+        const personGlassesLayer = document.querySelector('.person-layer[data-layer-type="glasses"]');
+        const personHatLayer = document.querySelector('.person-layer[data-layer-type="hat"]');
+
+        const travelMap = document.getElementById('travel-map');
+        const mapPersonDot = document.querySelector('.map-person-dot');
+
+        const coinsDisplay = document.getElementById('coins'); // Теперь прямо в HTML
+        const timeRemainingDisplay = document.getElementById('time-remaining-display'); // Теперь прямо в HTML
+
+        const eventModal = document.getElementById('event-modal');
+        const eventQuestion = document.getElementById('event-question');
+        const eventOptions = document.getElementById('event-options');
+
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmationQuestion = document.getElementById('confirmation-question');
+        const confirmYesButton = document.querySelector('.confirm-yes');
+        const confirmNoButton = document.querySelector('.confirm-no');
+
+        const travelPopup = document.getElementById('travel-popup');
+        const albumPopup = document.getElementById('album-popup');
+        const shopPopup = document.getElementById('shop-popup');
+
+        const travelLocationsList = document.getElementById('travel-locations-popup');
+        const albumGrid = document.getElementById('album-grid-popup');
+        const shopCoinsDisplay = document.getElementById('shop-coins-popup');
+        const characterCustomizationItems = document.getElementById('character-customization-items-popup');
+        const onlinePromoItemsContainer = document.getElementById('online-promo-items-popup');
+
+        // --- Глобальные переменные состояния игры ---
+        let currentCoins = 0;
+        let isTraveling = false;
+        let travelTimerIntervalId;
+        let timeRemaining;
+        let travelSpeedMultiplier = 1;
+        let currentTravelLocation = null;
+        let initialTravelDuration;
+
+        let event1Triggered = false;
+        let event2Triggered = false;
+
+        let equippedItems = {
+            body: 'body-default',
+            glasses: null,
+            hat: null
+        };
+        let ownedItems = ['body-default'];
+
+        // --- Данные игры ---
+
+        const locations = [
+            { id: 'lake-bright', name: 'Озеро Светлое', duration: 15000, reward: 50, visits: 0, image: 'map_lake_bright.png' },
+            { id: 'forest-path', name: 'Лесная Тропа', duration: 20000, reward: 75, visits: 0, image: 'map_forest_path.png' },
+            { id: 'mountain-peak', name: 'Горный Пик', duration: 25000, reward: 100, locked: true, unlockRequirement: { locationId: 'lake-bright', visits: 2 }, visits: 0, image: 'map_mountain_peak.png' },
+        ];
+
+        const travelEvents = [
+            {
+                question: 'На вашем пути преграда. Как поступите?',
+                options: [
+                    { text: 'Обойду быстро', correct: true, speedChange: 2.0 },
+                    { text: 'Изучу внимательно', correct: false, speedChange: 0.5 }
+                ]
+            },
+            {
+                question: 'Вы встретили странного путника. Как отреагируете?',
+                options: [
+                    { text: 'Поздороваюсь', correct: true, speedChange: 1.5 },
+                    { text: 'Проигнорирую', correct: false, speedChange: 0.7 }
+                ]
+            },
+            {
+                question: 'Погода портится. Ваши действия?',
+                options: [
+                    { text: 'Укроюсь и подожду', correct: false, speedChange: 0.6 },
+                    { text: 'Продолжу путь', correct: true, speedChange: 2.5 }
+                ]
+            }
+        ];
+
+        const customizationItems = [
+            { id: 'body-default', name: 'Обычное тело', type: 'body', value: '#ccc', price: 0, equippedByDefault: true },
+            { id: 'body-red', name: 'Красное тело', type: 'body', value: '#ff0000', price: 100 },
+            { id: 'body-blue', name: 'Синее тело', type: 'body', value: '#0000ff', price: 150 },
+            { id: 'glasses-sunglasses', name: 'Солнцезащитные очки', type: 'glasses', value: 'images/glasses/glasses_sunglasses.png', price: 200 },
+            { id: 'glasses-nerd', name: 'Очки для ботаника', type: 'glasses', value: 'images/glasses/glasses_nerd.png', price: 180 },
+            { id: 'hat-cap', name: 'Бейсболка', type: 'hat', value: 'images/hats/hat_cap.png', price: 250 },
+        ];
+
+        const onlineServicePromos = [
+            { id: 'promo-spotify', name: 'Промокод Spotify', price: 500, code: 'SPOTIFYFREEMONTH', purchased: false, description: 'Получите 1 месяц Spotify Premium бесплатно!' },
+            { id: 'promo-netflix', name: 'Промокод Netflix', price: 750, code: 'NETFLIXDISCOUNT20', purchased: false, description: 'Скидка 20% на первую подписку Netflix!' },
+        ];
+
+        // --- Функции LocalStorage (База данных) ---
+
+        function saveGameData() {
+            const gameData = {
+                coins: currentCoins,
+                locations: locations.map(loc => ({ id: loc.id, visits: loc.visits, locked: loc.locked })),
+                equippedItems: equippedItems,
+                ownedItems: ownedItems,
+                onlineServicePromos: onlineServicePromos.map(promo => ({ id: promo.id, purchased: promo.purchased }))
+            };
+            localStorage.setItem('travelSimulatorGame', JSON.stringify(gameData));
+        }
+
+        function loadGameData() {
+            const savedData = localStorage.getItem('travelSimulatorGame');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+                currentCoins = gameData.coins || 0;
+
+                if (gameData.locations) {
+                    gameData.locations.forEach(savedLoc => {
+                        const loc = locations.find(l => l.id === savedLoc.id);
+                        if (loc) {
+                            loc.visits = savedLoc.visits;
+                            if (savedLoc.hasOwnProperty('locked')) {
+                                loc.locked = savedLoc.locked;
+                            }
+                        }
+                    });
+                }
+
+                if (gameData.equippedItems) {
+                    equippedItems = gameData.equippedItems;
+                }
+                ownedItems = gameData.ownedItems || ['body-default'];
+
+                if (gameData.onlineServicePromos) {
+                    gameData.onlineServicePromos.forEach(savedPromo => {
+                        const promo = onlineServicePromos.find(p => p.id === savedPromo.id);
+                        if (promo) {
+                            promo.purchased = savedPromo.purchased;
+                        }
+                    });
+                }
+            }
+        }
+
+        // --- Управление персонажем (кастомизация) ---
+        function updatePersonAppearance() {
+            personGlassesLayer.innerHTML = '';
+            personHatLayer.innerHTML = '';
+            personGlassesLayer.style.display = 'none';
+            personHatLayer.style.display = 'none';
+
+            const bodyItem = customizationItems.find(item => item.id === equippedItems.body);
+            if (bodyItem) {
+                if (bodyItem.type === 'body' && bodyItem.value.startsWith('#')) {
+                    personBodyLayer.style.backgroundColor = bodyItem.value;
+                    personBodyLayer.innerHTML = 'Человек';
+                } else if (bodyItem.type === 'body' && bodyItem.value.startsWith('images/')) {
+                    personBodyLayer.style.backgroundColor = 'transparent';
+                    personBodyLayer.innerHTML = `<img src="${bodyItem.value}" alt="${bodyItem.name}">`;
+                }
+            } else {
+                personBodyLayer.style.backgroundColor = '#ccc';
+                personBodyLayer.innerHTML = 'Человек';
+            }
+
+            const glassesItem = customizationItems.find(item => item.id === equippedItems.glasses);
+            if (glassesItem && glassesItem.type === 'glasses' && glassesItem.value) {
+                personGlassesLayer.innerHTML = `<img src="${glassesItem.value}" alt="${glassesItem.name}">`;
+                personGlassesLayer.style.display = 'flex';
+            }
+
+            const hatItem = customizationItems.find(item => item.id === equippedItems.hat);
+            if (hatItem && hatItem.type === 'hat' && hatItem.value) {
+                personHatLayer.innerHTML = `<img src="${hatItem.value}" alt="${hatItem.name}">`;
+                personHatLayer.style.display = 'flex';
+            }
+        }
+
+        // --- Инициализация элементов DOM для модальных окон ---
+
+        function populateTravelLocations() {
+            travelLocationsList.innerHTML = '';
+            locations.forEach(loc => {
+                const li = document.createElement('li');
+                let buttonText = 'Отправить';
+                let buttonDisabled = '';
+                let lockedInfo = '';
+
+                if (loc.locked) {
+                    buttonText = 'Заблокировано';
+                    buttonDisabled = 'disabled';
+                    if (loc.unlockRequirement) {
+                        const requiredLoc = locations.find(l => l.id === loc.unlockRequirement.locationId);
+                        const requiredVisits = loc.unlockRequirement.visits;
+                        const currentVisits = requiredLoc ? requiredLoc.visits : 0;
+                        const remainingVisits = requiredVisits - currentVisits;
+                        if (remainingVisits > 0) {
+                            lockedInfo = `(Требуется ${remainingVisits} посещени${remainingVisits === 1 ? 'е' : 'я'} ${requiredLoc.name})`;
+                        }
+                    }
+                }
+
+                li.innerHTML = `
+                    <span>${loc.name}</span> <br>
+                    <small>${lockedInfo}</small>
+                    <button data-location="${loc.id}" ${buttonDisabled}>${buttonText}</button>
+                `;
+                travelLocationsList.appendChild(li);
+            });
+        }
+
+        function populateShopItems() {
+            characterCustomizationItems.innerHTML = '';
+            customizationItems.forEach(item => {
+                const isOwned = ownedItems.includes(item.id);
+                const isEquipped = equippedItems[item.type] === item.id;
+
+                const itemClass = ['shop-item'];
+                if (isOwned) itemClass.push('purchased');
+                if (isEquipped) itemClass.push('equipped');
+
+                const div = document.createElement('div');
+                div.className = itemClass.join(' ');
+
+                let itemVisual;
+                if (item.type === 'body' && item.value.startsWith('#')) {
+                    itemVisual = `<div style="width: 50px; height: 50px; background-color: ${item.value}; border-radius: 50%; margin: 0 auto 10px;"></div>`;
+                } else if (item.value.startsWith('images/')) {
+                    itemVisual = `<div style="width: 50px; height: 50px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center;"><img src="${item.value}" alt="${item.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
+                } else {
+                    itemVisual = `<div style="width: 50px; height: 50px; background-color: #eee; border-radius: 50%; margin: 0 auto 10px;">?</div>`;
+                }
+
+                const buttonText = isEquipped ? 'Надето' : (isOwned ? 'Надеть' : 'Купить');
+                const buttonDisabled = isEquipped || (item.price === 0 && isOwned) ? 'disabled' : '';
+
+                div.innerHTML = `
+                    <h4>${item.name}</h4>
+                    ${itemVisual}
+                    <p class="price">${item.price === 0 ? 'Бесплатно' : item.price + ' монет'}</p>
+                    <button class="buy-button" data-item-id="${item.id}" ${buttonDisabled}>${buttonText}</button>
+                `;
+                characterCustomizationItems.appendChild(div);
+
+                const buyButton = div.querySelector('.buy-button');
+                buyButton.addEventListener('click', () => handleShopPurchase(item));
+            });
+        }
+
+        function populateOnlinePromoItems() {
+            onlinePromoItemsContainer.innerHTML = '';
+            onlineServicePromos.forEach(promo => {
+                const isPurchased = promo.purchased;
+                const itemClass = isPurchased ? 'shop-item purchased' : 'shop-item';
+                const buttonText = isPurchased ? 'Скопировать' : 'Купить';
+                const buttonDisabled = isPurchased ? '' : (currentCoins < promo.price ? 'disabled' : '');
+
+                const div = document.createElement('div');
+                div.className = itemClass;
+                div.innerHTML = `
+                    <h4>${promo.name}</h4>
+                    <p>${promo.description}</p>
+                    <p class="price">${isPurchased ? 'Куплено' : promo.price + ' монет'}</p>
+                    <button class="buy-button" data-item-id="${promo.id}" data-item-type="online-promo" ${buttonDisabled}>${buttonText}</button>
+                    ${isPurchased ? `<input type="text" value="${promo.code}" readonly style="width: 90%; text-align: center; margin-top: 10px;">` : ''}
+                `;
+                onlinePromoItemsContainer.appendChild(div);
+
+                const buyButton = div.querySelector('.buy-button');
+                buyButton.addEventListener('click', () => handleOnlinePromoPurchase(promo));
+            });
+        }
+
+
+        // --- Функции управления отображением модальных окон ---
+
+        function showModal(modalElement) {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                if (modal.id !== 'event-modal' && modal.id !== 'confirmation-modal') {
+                    modal.style.display = 'none';
+                }
+            });
+
+            modalElement.style.display = 'flex';
+
+            if (modalElement === shopPopup) {
+                shopCoinsDisplay.textContent = currentCoins;
+                populateShopItems();
+                populateOnlinePromoItems();
+            } else if (modalElement === travelPopup) {
+                populateTravelLocations();
+            }
+        }
+
+        function closeModal(modalElement) {
+            modalElement.style.display = 'none';
+        }
+
+        // --- Функции для путешествий ---
+
+        function updateTravelProgress() {
+            if (timeRemaining <= 0) {
+                clearInterval(travelTimerIntervalId);
+                endTravel(currentTravelLocation.id);
+                return;
+            }
+
+            timeRemaining -= 100 * travelSpeedMultiplier;
+
+            timeRemainingDisplay.textContent = `Осталось: ${Math.ceil(timeRemaining / 1000)} сек.`;
+
+            const effectiveTimeRemaining = Math.max(0, timeRemaining);
+            const elapsedTime = initialTravelDuration - effectiveTimeRemaining;
+
+            const progress = elapsedTime / initialTravelDuration;
+
+            const dotPosition = progress * 100;
+            mapPersonDot.style.left = `${dotPosition}%`;
+
+            const oneThirdDuration = initialTravelDuration / 3;
+            const twoThirdsDuration = initialTravelDuration * 2 / 3;
+
+            if (!event1Triggered && elapsedTime >= oneThirdDuration) {
+                event1Triggered = true;
+                clearInterval(travelTimerIntervalId);
+                showEvent();
+                return;
+            }
+
+            if (!event2Triggered && elapsedTime >= twoThirdsDuration) {
+                event2Triggered = true;
+                clearInterval(travelTimerIntervalId);
+                showEvent();
+                return;
+            }
+        }
+
+        function startTravel(locationId) {
+            if (isTraveling) return;
+
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.style.display = 'none';
+            });
+
+            isTraveling = true;
+            currentTravelLocation = locations.find(loc => loc.id === locationId);
+            initialTravelDuration = currentTravelLocation.duration;
+            timeRemaining = initialTravelDuration;
+            travelSpeedMultiplier = 1;
+
+            event1Triggered = false;
+            event2Triggered = false;
+
+            travelMap.style.backgroundImage = `url('images/travel_maps/${currentTravelLocation.image}')`;
+            travelMap.style.backgroundColor = 'transparent';
+
+            personContainer.style.display = 'none';
+            travelMap.style.display = 'block';
+            timeRemainingDisplay.style.display = 'block';
+            sendOnTravelButton.disabled = true;
+
+            travelTimerIntervalId = setInterval(updateTravelProgress, 100);
+            saveGameData();
+        }
+
+        function showEvent() {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                if (modal.id !== 'event-modal') {
+                    modal.style.display = 'none';
+                }
+            });
+
+            const event = travelEvents[Math.floor(Math.random() * travelEvents.length)];
+            eventQuestion.textContent = event.question;
+            eventOptions.innerHTML = '';
+
+            event.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.addEventListener('click', () => handleEventChoice(option.correct, option.speedChange));
+                eventOptions.appendChild(button);
+            });
+
+            eventModal.style.display = 'flex';
+            eventModal.classList.add('active');
+        }
+
+        function handleEventChoice(isCorrect, speedChange) {
+            if (isCorrect) {
+                travelSpeedMultiplier *= speedChange;
+            } else {
+                travelSpeedMultiplier *= speedChange;
+            }
+            eventModal.style.display = 'none';
+            eventModal.classList.remove('active');
+
+            travelTimerIntervalId = setInterval(updateTravelProgress, 100);
+        }
+
+        function endTravel(locationId) {
+            isTraveling = false;
+            travelSpeedMultiplier = 1;
+            mapPersonDot.style.left = '0%';
+
+            travelMap.style.backgroundImage = 'none';
+            travelMap.style.backgroundColor = '#a0c0e0';
+
+            personContainer.style.display = 'flex';
+            travelMap.style.display = 'none';
+            timeRemainingDisplay.style.display = 'none';
+            sendOnTravelButton.disabled = false;
+
+            const location = locations.find(loc => loc.id === locationId);
+            currentCoins += location.reward;
+            coinsDisplay.textContent = currentCoins;
+            showConfirmationModal(`Путешествие в "${location.name}" завершено! Вы заработали ${location.reward} монет.`, false, () => { });
+
+            location.visits++;
+            checkUnlockNewLocations();
+            addAlbumCard(location.name, location.image);
+            saveGameData();
+        }
+
+        function checkUnlockNewLocations() {
+            locations.forEach(loc => {
+                if (loc.locked && loc.unlockRequirement) {
+                    const requiredLoc = locations.find(l => l.id === loc.unlockRequirement.locationId);
+                    if (requiredLoc && requiredLoc.visits >= loc.unlockRequirement.visits) {
+                        loc.locked = false;
+                        showConfirmationModal(`Поздравляем! Вы разблокировали новое место: ${loc.name}!`, false, () => { });
+                    }
+                }
+            });
+        }
+
+        function addAlbumCard(locationName, imageUrl) {
+            const albumItem = document.createElement('div');
+            albumItem.classList.add('album-item');
+            albumItem.innerHTML = `
+                <img src="images/travel_maps/${imageUrl}" alt="${locationName}">
+                <p>${locationName}</p>
+            `;
+            albumGrid.appendChild(albumItem);
+        }
+
+        function showConfirmationModal(questionText, showCancelButton, callback) {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                if (modal.id !== 'confirmation-modal' && !eventModal.classList.contains('active')) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            confirmationQuestion.textContent = questionText;
+            confirmationModal.style.display = 'flex';
+
+            confirmYesButton.removeEventListener('click', handleYesClick);
+            confirmNoButton.removeEventListener('click', handleNoClick);
+
+            function handleYesClick() {
+                confirmationModal.style.display = 'none';
+                confirmYesButton.removeEventListener('click', handleYesClick);
+                confirmNoButton.removeEventListener('click', handleNoClick);
+                callback(true);
+            }
+
+            function handleNoClick() {
+                confirmationModal.style.display = 'none';
+                confirmYesButton.removeEventListener('click', handleYesClick);
+                confirmNoButton.removeEventListener('click', handleNoClick);
+                callback(false);
+            }
+
+            confirmYesButton.addEventListener('click', handleYesClick);
+            confirmNoButton.addEventListener('click', handleNoClick);
+
+            if (showCancelButton) {
+                confirmYesButton.textContent = 'Да';
+                confirmYesButton.style.flexGrow = 1;
+                confirmNoButton.style.display = 'inline-block';
+            } else {
+                confirmYesButton.textContent = 'ОК';
+                confirmYesButton.style.flexGrow = 1;
+                confirmNoButton.style.display = 'none';
+            }
+        }
+
+        // --- Функции магазина ---
+
+        function handleShopPurchase(item) {
+            const isOwned = ownedItems.includes(item.id);
+
+            if (isOwned) {
+                showConfirmationModal(`Надеть ${item.name}?`, true, (confirmed) => {
+                    if (confirmed) {
+                        equippedItems[item.type] = item.id;
+                        updatePersonAppearance();
+                        showConfirmationModal(`Вы надели ${item.name}!`, false, () => {
+                            populateShopItems();
+                        });
+                        saveGameData();
+                    }
+                });
+            } else {
+                if (currentCoins >= item.price) {
+                    showConfirmationModal(`Купить ${item.name} за ${item.price} монет?`, true, (confirmed) => {
+                        if (confirmed) {
+                            currentCoins -= item.price;
+                            coinsDisplay.textContent = currentCoins;
+                            shopCoinsDisplay.textContent = currentCoins;
+                            ownedItems.push(item.id);
+
+                            equippedItems[item.type] = item.id;
+                            updatePersonAppearance();
+
+                            showConfirmationModal(`Вы купили ${item.name} и надели его!`, false, () => {
+                                populateShopItems();
+                            });
+                            saveGameData();
+                        }
+                    });
+                } else {
+                    showConfirmationModal('Недостаточно монет для покупки!', false, () => { });
+                }
+            }
+        }
+
+        function handleOnlinePromoPurchase(promo) {
+            if (promo.purchased) {
+                navigator.clipboard.writeText(promo.code).then(() => {
+                    showConfirmationModal(`Промокод "${promo.code}" скопирован в буфер обмена!`, false, () => { });
+                }).catch(err => {
+                    console.error('Не удалось скопировать текст: ', err);
+                    showConfirmationModal('Не удалось скопировать промокод. Попробуйте скопировать вручную: ' + promo.code, false, () => { });
+                });
+            } else {
+                if (currentCoins >= promo.price) {
+                    showConfirmationModal(`Купить промокод "${promo.name}" за ${promo.price} монет?`, true, (confirmed) => {
+                        if (confirmed) {
+                            currentCoins -= promo.price;
+                            coinsDisplay.textContent = currentCoins;
+                            shopCoinsDisplay.textContent = currentCoins;
+                            promo.purchased = true;
+                            showConfirmationModal(`Вы купили промокод для "${promo.name}"! Теперь вы можете его скопировать.`, false, () => {
+                                populateOnlinePromoItems();
+                            });
+                            saveGameData();
+                        }
+                    });
+                } else {
+                    showConfirmationModal('Недостаточно монет для покупки этого промокода!', false, () => { });
+                }
+            }
+        }
+
+        // --- Обработчики событий ---
+
+        // Переназначаем обработчики для новых кнопок
+        sendOnTravelButton.addEventListener('click', () => {
+            showModal(travelPopup);
+        });
+
+        viewAlbumButton.addEventListener('click', () => {
+            showModal(albumPopup);
+        });
+
+        shopPopupButton.addEventListener('click', () => { // Привязываем к новой кнопке
+            showModal(shopPopup);
+        });
+
+        travelLocationsList.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON' && !event.target.disabled) {
+                const locationId = event.target.dataset.location;
+                const loc = locations.find(l => l.id === locationId);
+                showConfirmationModal(`Отправиться в "${loc.name}"?`, true, (confirmed) => {
+                    if (confirmed) {
+                        startTravel(locationId);
+                    }
+                });
+            } else if (event.target.tagName === 'BUTTON' && event.target.disabled) {
+                const loc = locations.find(l => l.id === event.target.dataset.location);
+                if (loc && loc.unlockRequirement) {
+                    const requiredLoc = locations.find(l => l.id === loc.unlockRequirement.locationId);
+                    const remainingVisits = loc.unlockRequirement.visits - (requiredLoc ? requiredLoc.visits : 0);
+                    showConfirmationModal(`Это место заблокировано. Посетите ${requiredLoc.name} ещё ${remainingVisits} раз, чтобы разблокировать.`, false, () => { });
+                } else {
+                    showConfirmationModal('Это место заблокировано.', false, () => { });
+                }
+            }
+        });
+
+        document.querySelectorAll('.modal-content .close-button').forEach(button => {
+            button.addEventListener('click', (event) => {
+                closeModal(event.target.closest('.modal-overlay'));
+            });
+        });
+
+        // --- Инициализация при загрузке страницы ---
+        loadGameData();
+        updatePersonAppearance();
+        coinsDisplay.textContent = currentCoins;
+
+        // Эти функции теперь вызываются только при открытии соответствующих модальных окон
+        // populateTravelLocations();
+        // populateShopItems();
+        // populateOnlinePromoItems();
+
+    </script>
+</body>
+
+</html>
