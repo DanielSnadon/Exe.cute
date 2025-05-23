@@ -404,22 +404,22 @@
             {
                 question: 'На вашем пути преграда. Как поступите?',
                 options: [
-                    { text: 'Обойду быстро', correct: true, speedChange: 1.2 }, // Ускоряет на 20%
-                    { text: 'Изучу внимательно', correct: false, speedChange: 0.8 } // Замедляет на 20%
+                    { text: 'Обойду быстро', correct: true, speedChange: 2.0 }, // Ускоряет в 2 раза
+                    { text: 'Изучу внимательно', correct: false, speedChange: 0.5 } // Замедляет в 2 раза
                 ]
             },
             {
                 question: 'Вы встретили странного путника. Как отреагируете?',
                 options: [
-                    { text: 'Поздороваюсь', correct: true, speedChange: 1.1 }, // Ускоряет на 10%
-                    { text: 'Проигнорирую', correct: false, speedChange: 0.9 } // Замедляет на 10%
+                    { text: 'Поздороваюсь', correct: true, speedChange: 1.5 }, // Ускоряет на 50%
+                    { text: 'Проигнорирую', correct: false, speedChange: 0.7 } // Замедляет на 30%
                 ]
             },
             {
                 question: 'Погода портится. Ваши действия?',
                 options: [
-                    { text: 'Укроюсь и подожду', correct: false, speedChange: 0.7 }, // Замедляет на 30%
-                    { text: 'Продолжу путь', correct: true, speedChange: 1.3 } // Ускоряет на 30%
+                    { text: 'Укроюсь и подожду', correct: false, speedChange: 0.6 }, // Замедляет на 40%
+                    { text: 'Продолжу путь', correct: true, speedChange: 2.5 } // Ускоряет в 2.5 раза
                 ]
             }
         ];
@@ -429,12 +429,25 @@
         // Заполняем список мест для путешествий
         function populateTravelLocations() {
             travelLocationsList.innerHTML = ''; // Очищаем список
+            const lakeBright = locations.find(loc => loc.id === 'lake-bright');
+
             locations.forEach(loc => {
                 const li = document.createElement('li');
-                const buttonText = loc.locked ? 'Заблокировано' : 'Отправить';
-                const buttonDisabled = loc.locked ? 'disabled' : ''; // Делаем кнопку неактивной, если заблокирована
+                let buttonText = 'Отправить';
+                let buttonDisabled = '';
+                let lockedInfo = '';
+
+                if (loc.locked) {
+                    buttonText = 'Заблокировано';
+                    buttonDisabled = 'disabled';
+                    const remainingVisits = 2 - lakeBright.visits;
+                    if (remainingVisits > 0) {
+                        lockedInfo = `(Требуется ${remainingVisits} посещени${remainingVisits === 1 ? 'е' : 'я'} Озера Светлого)`;
+                    }
+                }
+
                 li.innerHTML = `
-                    <span>${loc.name} ${loc.locked ? `(Требуется ${2 - locations.find(l => l.id === 'lake-bright').visits} посещений Озера Светлого)` : ''}</span>
+                    <span>${loc.name} ${lockedInfo}</span>
                     <button data-location="${loc.id}" ${buttonDisabled}>${buttonText}</button>
                 `;
                 travelLocationsList.appendChild(li);
@@ -478,18 +491,22 @@
             }
 
             // Обновляем линию прогресса
-            const progressPercentage = ((initialTravelDuration - timeRemaining) / initialTravelDuration) * 100;
+            // Время уменьшается с учетом множителя скорости
+            timeRemaining -= 100 * travelSpeedMultiplier; // Уменьшаем время с учетом скорости
+
+            // Убеждаемся, что время не ушло в минус при расчете прогресса
+            const effectiveTimeRemaining = Math.max(0, timeRemaining);
+            const progressPercentage = ((initialTravelDuration - effectiveTimeRemaining) / initialTravelDuration) * 100;
             progressLine.style.width = `${progressPercentage}%`;
 
             // Проверка на событие: только если не было запланировано и время в нужных рамках
-            // И событие не должно быть активным (модальное окно скрыто)
-            if (!eventModal.classList.contains('active') && Math.random() < 0.05 && timeRemaining > initialTravelDuration * 0.2 && timeRemaining < initialTravelDuration * 0.8) { // 5% шанс на событие
+            // И событие не должно быть активно (модальное окно скрыто)
+            // Шанс события: примерно 5% от оставшегося времени каждый 100мс
+            if (!eventModal.classList.contains('active') && Math.random() < 0.05 && timeRemaining > initialTravelDuration * 0.2 && timeRemaining < initialTravelDuration * 0.8) {
                 clearInterval(travelTimerIntervalId); // Останавливаем таймер для события
                 showEvent();
                 return; // Выходим, чтобы таймер не продолжал отсчет
             }
-
-            timeRemaining -= 100 * travelSpeedMultiplier; // Уменьшаем время с учетом скорости
         }
 
         // Запуск путешествия
@@ -530,15 +547,16 @@
         function handleEventChoice(isCorrect, speedChange) {
             if (isCorrect) {
                 travelSpeedMultiplier *= speedChange; // Ускоряем
-                alert('Отличный выбор! Вы ускоряетесь!');
+                alert(`Отличный выбор! Вы ускоряетесь в ${speedChange} раз!`); // Обновленное сообщение
             } else {
                 travelSpeedMultiplier *= speedChange; // Замедляем
-                alert('Не лучший выбор. Вы замедляетесь!');
+                alert(`Не лучший выбор. Вы замедляетесь в ${1 / speedChange} раз!`); // Обновленное сообщение
             }
             eventModal.style.display = 'none'; // Скрываем модальное окно
             eventModal.classList.remove('active'); // Удаляем активный класс
-            // Продолжаем отсчет времени тем же самым интервалом.
-            // setInterval был очищен при показе модалки, поэтому нужно его запустить снова.
+
+            // Продолжаем отсчет времени тем же самым интервалом, который был остановлен.
+            // Если он уже остановлен, то запускаем заново.
             travelTimerIntervalId = setInterval(updateTravelProgress, 100);
         }
 
@@ -572,13 +590,11 @@
             const lakeBright = locations.find(loc => loc.id === 'lake-bright');
             const mountainPeak = locations.find(loc => loc.id === 'mountain-peak');
 
-            if (lakeBright.visits >= 2 && mountainPeak.locked) {
+            if (mountainPeak.locked && lakeBright.visits >= 2) { // Проверяем, если Горный Пик еще заблокирован и условие выполнено
                 mountainPeak.locked = false;
                 alert('Поздравляем! Вы разблокировали новое место: Горный Пик!');
-                populateTravelLocations(); // Обновляем список мест
-            } else {
-                populateTravelLocations(); // Всегда обновляем список, чтобы обновить счетчик посещений
             }
+            populateTravelLocations(); // Всегда обновляем список, чтобы обновить текст, если место разблокировано или изменился счетчик посещений
         }
 
         // Добавление карточки в альбом
