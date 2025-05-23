@@ -12,9 +12,14 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
+            background-color: #F4E7E1;
+            /* Общий фон */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Более современный шрифт */
             overflow: hidden;
+            font-size: 16px;
+            color: #333;
+            /* Общий цвет текста */
         }
 
         #game-container {
@@ -24,7 +29,7 @@
             max-height: 100vh;
             background-color: #fff;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0 0 0 / 20%);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -38,7 +43,52 @@
             }
         }
 
-        /* Убираем верхние табы, так как теперь есть кнопки снизу */
+        /* Адаптации для очень маленьких экранов */
+        @media (max-width: 480px) {
+            body {
+                font-size: 14px;
+            }
+
+            #game-container {
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .bottom-buttons-container {
+                padding: 0 10px 10px;
+            }
+
+            #send-on-travel-button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+
+            .round-button {
+                width: 60px;
+                height: 60px;
+                font-size: 1.2em;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .shop-item .buy-button {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+
+            #shop-popup .shop-items {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 10px;
+            }
+
+            #album-popup .album-grid {
+                gap: 8px;
+            }
+        }
+
+
         .tabs {
             display: none;
         }
@@ -49,147 +99,187 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            /* Распределяем содержимое по вертикали */
             align-items: center;
             position: relative;
             padding: 20px;
             box-sizing: border-box;
-            /* Учитываем padding в размере */
         }
 
         #main-tab h2 {
             display: none;
-            /* Скрываем заголовок "Главная" */
         }
 
         #coins-display-top-right {
-            /* Новый контейнер для монет */
             position: absolute;
             top: 15px;
             right: 15px;
-            background-color: rgba(0 0 0 / 60%);
+            background-color: rgba(0, 0, 0, 0.6);
             color: white;
             padding: 8px 12px;
             border-radius: 8px;
             font-size: 1.2em;
             font-weight: bold;
             z-index: 500;
-            /* Чтобы было поверх других элементов, но под модальными окнами */
         }
 
         #time-remaining-display {
-            background-color: rgba(0 0 0 / 60%);
+            background-color: rgba(0, 0, 0, 0.6);
             color: white;
             padding: 5px 10px;
             border-radius: 5px;
             font-size: 1.1em;
+            font-weight: bold;
+            /* Жирный текст */
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+            /* Тень для заметности */
             display: none;
-            /* Скрыто по умолчанию, показываем только в путешествии */
             margin-top: 15px;
-            /* Отступ от карты */
             z-index: 1;
         }
 
-        .person-container {
-            width: 150px;
-            height: 150px;
-            margin: 20px auto 10px;
-            /* Уменьшаем нижний отступ */
-            position: relative;
+        /* --- Центрирование персонажа и карты --- */
+        .center-content {
+            flex-grow: 1;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-end;
+            /* Опускаем контент к низу */
             align-items: center;
+            width: 100%;
+            position: relative;
             overflow: hidden;
         }
 
+        /* Контейнер для персонажа, чтобы слои накладывались */
+        .person-container {
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            position: absolute;
+            bottom: 0;
+            /* Прижимаем к низу */
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            /* Изменено на flex-end, чтобы персонаж стоял на "земле" */
+            overflow: hidden;
+            z-index: 0;
+            /* Опускаем под кнопки */
+            pointer-events: none;
+            /* Чтобы кнопки внизу были кликабельны */
+        }
+
+        /* Общие стили для слоев персонажа (тело, очки, шляпа и т.д.) */
         .person-layer {
             position: absolute;
             width: 100%;
             height: 100%;
-            border-radius: 50%;
-            background-color: #ccc;
             display: flex;
             justify-content: center;
-            align-items: center;
-            font-size: 0.9em;
-            color: #666;
-            border: 2px solid #aaa;
-            box-shadow: inset 0 0 5px rgba(0 0 0 / 10%);
+            align-items: flex-end;
+            /* Изменено на flex-end */
+            background-color: transparent;
+            overflow: hidden;
         }
 
         .person-layer img {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
+        }
+
+        /* --- Анимация карты (квадратная) --- */
+        #travel-map {
+            width: 250px;
+            /* Установим фиксированную ширину */
+            height: 250px;
+            /* И такую же высоту для квадрата */
+            background-color: #a0c0e0;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            margin: auto;
+            /* Центрируем по вертикали и горизонтали */
+            display: none;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #80a0c0;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+            /* Поверх персонажа, когда он в движении */
+        }
+
+        #travel-map .map-person-dot {
+            position: absolute;
+            width: 50px;
+            /* Увеличиваем размер */
+            height: 50px;
+            /* Увеличиваем размер */
+            background-image: url('images/person.png');
+            /* Используем person.png */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 0;
+            /* Убираем border-radius, так как это картинка */
+            transform: translate(-50%, -50%);
+            /* Центрируем изображение относительно его точки */
+            top: 50%;
+            /* Начальная позиция по вертикали */
+            left: 0%;
+            /* Начальная позиция по горизонтали */
+            z-index: 10;
         }
 
         /* --- Кнопки внизу экрана --- */
         .bottom-buttons-container {
             display: flex;
             justify-content: space-between;
-            /* Распределяем кнопки */
             align-items: flex-end;
-            /* Выравниваем по низу */
             width: 100%;
             padding: 0 15px 15px;
-            /* Отступы снизу и по бокам */
             box-sizing: border-box;
             position: relative;
-            /* Для позиционирования основной кнопки */
+            z-index: 100;
+            /* Кнопки поверх всего, включая персонажа */
         }
 
         .bottom-buttons-container button {
-            padding: 12px 25px;
-            font-size: 1.1em;
             cursor: pointer;
             border: none;
-            border-radius: 8px;
             color: white;
             transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0 0 0 / 10%);
-            min-width: 120px;
-            /* Минимальная ширина для удобства */
-        }
-
-        /* Отдельные стили для кнопок */
-        #view-album-button {
-            /* Слева снизу */
-            background-color: #008CBA;
-        }
-
-        #view-album-button:hover {
-            background-color: #007bb5;
-            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            flex-shrink: 0;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1em;
+            /* Увеличим общий размер шрифта кнопок */
+            letter-spacing: 0.5px;
+            /* Небольшой межбуквенный интервал */
         }
 
         #send-on-travel-button {
-            /* По центру снизу */
-            background-color: #4CAF50;
+            background-color: #D5451B;
+            border-radius: 50px;
             position: absolute;
-            /* Абсолютное позиционирование для центра */
             left: 50%;
             transform: translateX(-50%);
-            /* Центрирование */
             bottom: 15px;
-            /* Отступ от нижнего края контейнера */
             z-index: 10;
-            /* Поверх других кнопок */
+            padding: 12px 25px;
+            font-size: 1.2em;
+            /* Увеличим шрифт основной кнопки */
+            white-space: nowrap;
         }
 
         #send-on-travel-button:hover {
-            background-color: #45a049;
+            background-color: #c03d16;
             transform: translateX(-50%) translateY(-2px);
-        }
-
-        #shop-popup-button {
-            /* Справа снизу (бывшая main-buttons button:nth-child(2)) */
-            background-color: #FFA500;
-            /* Оранжевый цвет для магазина */
-        }
-
-        #shop-popup-button:hover {
-            background-color: #e69500;
-            transform: translateY(-2px);
         }
 
         #send-on-travel-button:disabled {
@@ -197,33 +287,23 @@
             cursor: not-allowed;
         }
 
-        /* --- Анимация карты --- */
-        #travel-map {
-            width: 300px;
-            height: 150px;
-            background-color: #a0c0e0;
-            background-size: cover;
-            background-position: center;
-            border-radius: 8px;
-            margin: 20px auto 10px;
-            /* Отступ сверху и снизу */
-            display: none;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid #80a0c0;
-            box-shadow: inset 0 0 8px rgba(0 0 0 / 20%);
+        .round-button {
+            width: 70px;
+            border-radius: 50%;
+            background-color: #FF9B45;
+            font-size: 1.3em;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* Усилим тень для кнопок */
         }
 
-        #travel-map .map-person-dot {
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background-color: #ff0000;
-            border-radius: 50%;
-            transform: translateY(-50%);
-            top: 50%;
-            left: 0%;
-            z-index: 10;
+        #view-album-button:hover {
+            background-color: #e68d3e;
+            transform: translateY(-2px);
+        }
+
+        #shop-popup-button:hover {
+            background-color: #e68d3e;
+            transform: translateY(-2px);
         }
 
         /* --- Общие стили для ВСЕХ модальных окон (event, confirmation, и новые popups) --- */
@@ -235,7 +315,7 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0 0 0 / 60%);
+            background-color: rgba(0, 0, 0, 0.6);
             justify-content: center;
             align-items: center;
         }
@@ -244,15 +324,17 @@
             background-color: #fefefe;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0 0 0 / 30%);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             width: 80%;
-            max-width: 400px;
+            max-width: 450px;
             text-align: center;
             position: relative;
             animation: modalAppear 0.3s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
             max-height: 80%;
             display: flex;
             flex-direction: column;
+            color: #444;
+            /* Цвет текста в модалках */
         }
 
         .close-button {
@@ -277,6 +359,10 @@
             margin-top: 0;
             color: #333;
             margin-bottom: 20px;
+            font-weight: bold;
+            /* Заголовки жирные */
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            /* Легкая тень для заголовков */
         }
 
         .modal-content .scrollable-content {
@@ -293,10 +379,13 @@
             padding: 12px;
             margin: 10px auto;
             border: none;
-            border-radius: 8px;
+            border-radius: 50px;
             background-color: #008CBA;
             color: white;
-            font-size: 1em;
+            font-size: 1.1em;
+            /* Увеличим шрифт */
+            font-weight: bold;
+            /* Жирный текст */
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
@@ -315,11 +404,13 @@
         #confirmation-modal .confirmation-modal-buttons button {
             padding: 12px 25px;
             border: none;
-            border-radius: 8px;
+            border-radius: 50px;
             font-size: 1.1em;
+            font-weight: bold;
+            /* Жирный текст */
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0 0 0 / 10%);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             flex-grow: 1;
         }
 
@@ -358,7 +449,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0 0 0 / 5%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-size: 1.1em;
+            /* Увеличим шрифт */
         }
 
         #travel-popup .travel-locations-list li button {
@@ -366,9 +459,11 @@
             background-color: #5cb85c;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 50px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.95em;
+            /* Чуть увеличим шрифт */
+            font-weight: bold;
             transition: background-color 0.3s ease;
         }
 
@@ -376,56 +471,121 @@
             background-color: #4cae4c;
         }
 
+        /* --- Изменения для Альбома --- */
+        #album-popup .album-header {
+            margin-bottom: 20px;
+        }
+
+        #album-popup .album-header p {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #555;
+            margin-top: 10px;
+        }
+
         #album-popup .album-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            /* Сделаем карточки больше */
+            gap: 20px;
+            /* Увеличим расстояние между карточками */
             justify-content: center;
+            padding: 10px;
         }
 
         #album-popup .album-item {
-            width: 100px;
-            height: 100px;
+            width: 100%;
+            padding-bottom: 100%;
+            position: relative;
             background-color: #eee;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 8px;
+            /* Чуть больше радиус */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             color: #888;
-            font-size: 0.8em;
+            font-size: 0.9em;
             text-align: center;
             overflow: hidden;
+            box-sizing: border-box;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* Добавим тень */
+            transition: transform 0.2s ease;
+        }
+
+        #album-popup .album-item:hover {
+            transform: translateY(-5px);
+            /* Эффект при наведении */
+        }
+
+        #album-popup .album-item>div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Центрируем изображение */
+            align-items: center;
             padding: 5px;
             box-sizing: border-box;
         }
 
         #album-popup .album-item img {
             max-width: 90%;
-            max-height: 90%;
+            max-height: 80%;
+            /* Увеличим высоту для изображения */
             object-fit: contain;
             margin-bottom: 5px;
+            /* Немного отступ от текста */
         }
 
+        #album-popup .album-item .location-name-overlay {
+            position: absolute;
+            top: 10px;
+            /* Отступ сверху */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            /* Белый полупрозрачный фон */
+            border-radius: 20px;
+            /* Овальная форма */
+            padding: 5px 12px;
+            /* Отступы внутри овала */
+            font-size: 0.95em;
+            font-weight: bold;
+            /* Жирный текст */
+            color: #333;
+            white-space: nowrap;
+            /* Не переносить текст */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* Легкая тень */
+        }
+
+
+        /* --- Изменения для Магазина --- */
         #shop-popup .shop-section {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         #shop-popup .shop-items {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
             justify-content: center;
         }
 
         #shop-popup .shop-item {
             background-color: #f9f9f9;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid #eee;
-            box-shadow: 0 2px 4px rgba(0 0 0 / 5%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             text-align: center;
             cursor: pointer;
             transition: transform 0.2s ease;
@@ -447,23 +607,47 @@
 
         #shop-popup .shop-item h4 {
             margin-top: 0;
+            margin-bottom: 8px;
             color: #555;
+            font-size: 1.1em;
+            font-weight: bold;
+            /* Жирный заголовок */
         }
+
+        #shop-popup .shop-item .item-preview {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #shop-popup .shop-item .item-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
 
         #shop-popup .shop-item .price {
             font-weight: bold;
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 1em;
         }
 
         #shop-popup .shop-item .buy-button {
-            padding: 8px 15px;
+            padding: 10px 20px;
             background-color: #28a745;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 50px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 1em;
+            font-weight: bold;
+            /* Жирный текст кнопки */
             transition: background-color 0.3s ease;
             margin-top: 5px;
         }
@@ -476,6 +660,18 @@
         #shop-popup .shop-item .buy-button:hover:not(:disabled) {
             background-color: #218838;
         }
+
+        #shop-popup .shop-item input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 8px 10px;
+            margin-top: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.85em;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
 
         @keyframes modalAppear {
             from {
@@ -498,21 +694,26 @@
                 <span id="coins">0</span> монет
             </div>
 
-            <div class="person-container">
-                <div class="person-layer" data-layer-type="body" style="background-color: #ccc;">Человек</div>
-                <div class="person-layer" data-layer-type="glasses"></div>
-                <div class="person-layer" data-layer-type="hat"></div>
-            </div>
-            <div id="travel-map">
-                <div class="map-person-dot"></div>
-            </div>
+            <div class="center-content">
+                <div class="person-container">
+                    <div class="person-layer" data-layer-type="body"></div>
+                    <div class="person-layer" data-layer-type="shirt"></div>
+                    <div class="person-layer" data-layer-type="tshirt"></div>
+                    <div class="person-layer" data-layer-type="hair"></div>
+                    <div class="person-layer" data-layer-type="glasses"></div>
+                    <div class="person-layer" data-layer-type="hat"></div>
+                </div>
+                <div id="travel-map">
+                    <div class="map-person-dot"></div>
+                </div>
 
-            <div id="time-remaining-display"></div>
+                <div id="time-remaining-display"></div>
+            </div>
 
             <div class="bottom-buttons-container">
-                <button id="view-album-button" data-tab="album-popup-btn">Альбом</button>
-                <button id="send-on-travel-button" data-tab="travel-popup-btn">Отправить в путешествие</button>
-                <button id="shop-popup-button" data-tab="shop-popup-btn">Магазин</button>
+                <button id="view-album-button" class="round-button" data-tab="album-popup-btn">А</button>
+                <button id="send-on-travel-button" data-tab="travel-popup-btn">Путешествовать</button>
+                <button id="shop-popup-button" class="round-button" data-tab="shop-popup-btn">М</button>
             </div>
         </div>
 
@@ -549,6 +750,10 @@
             <div class="modal-content">
                 <span class="close-button">&times;</span>
                 <h2>Альбом путешествий</h2>
+                <div class="album-header">
+                    <p>Карточек собрано: <span id="album-card-count">0</span></p>
+                    <p>Скидка на страховку: <span id="insurance-discount">0</span>%</p>
+                </div>
                 <div class="scrollable-content">
                     <div class="album-grid" id="album-grid-popup">
                     </div>
@@ -564,9 +769,28 @@
                     <p>Ваш баланс: <span id="shop-coins-popup">0</span> монет</p>
 
                     <div class="shop-section">
-                        <h3>Кастомизация персонажа</h3>
-                        <div class="shop-items" id="character-customization-items-popup">
-                        </div>
+                        <h3>Тело</h3>
+                        <div class="shop-items" id="body-items-popup"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>Волосы</h3>
+                        <div class="shop-items" id="hair-items-popup"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>Рубашки</h3>
+                        <div class="shop-items" id="shirt-items-popup"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>Футболки</h3>
+                        <div class="shop-items" id="tshirt-items-popup"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>Очки</h3>
+                        <div class="shop-items" id="glasses-items-popup"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>Головные уборы</h3>
+                        <div class="shop-items" id="hat-items-popup"></div>
                     </div>
 
                     <div class="shop-section">
@@ -581,24 +805,26 @@
     </div>
     <script>
         // --- Получаем ссылки на элементы DOM ---
-        // const tabButtons = document.querySelectorAll('.tab-button'); // Эти кнопки удалены
         const mainTab = document.getElementById('main-tab');
 
-        // Обновленные ссылки на кнопки внизу
         const sendOnTravelButton = document.getElementById('send-on-travel-button');
         const viewAlbumButton = document.getElementById('view-album-button');
-        const shopPopupButton = document.getElementById('shop-popup-button'); // Новая ссылка
+        const shopPopupButton = document.getElementById('shop-popup-button');
 
         const personContainer = document.querySelector('.person-container');
+        // Обновляем список слоев персонажа
         const personBodyLayer = document.querySelector('.person-layer[data-layer-type="body"]');
+        const personShirtLayer = document.querySelector('.person-layer[data-layer-type="shirt"]');
+        const personTshirtLayer = document.querySelector('.person-layer[data-layer-type="tshirt"]');
+        const personHairLayer = document.querySelector('.person-layer[data-layer-type="hair"]');
         const personGlassesLayer = document.querySelector('.person-layer[data-layer-type="glasses"]');
         const personHatLayer = document.querySelector('.person-layer[data-layer-type="hat"]');
 
         const travelMap = document.getElementById('travel-map');
         const mapPersonDot = document.querySelector('.map-person-dot');
 
-        const coinsDisplay = document.getElementById('coins'); // Теперь прямо в HTML
-        const timeRemainingDisplay = document.getElementById('time-remaining-display'); // Теперь прямо в HTML
+        const coinsDisplay = document.getElementById('coins');
+        const timeRemainingDisplay = document.getElementById('time-remaining-display');
 
         const eventModal = document.getElementById('event-modal');
         const eventQuestion = document.getElementById('event-question');
@@ -615,8 +841,17 @@
 
         const travelLocationsList = document.getElementById('travel-locations-popup');
         const albumGrid = document.getElementById('album-grid-popup');
+        const albumCardCountDisplay = document.getElementById('album-card-count'); // Счетчик карточек
+        const insuranceDiscountDisplay = document.getElementById('insurance-discount'); // Скидка на страховку
         const shopCoinsDisplay = document.getElementById('shop-coins-popup');
-        const characterCustomizationItems = document.getElementById('character-customization-items-popup');
+
+        // Новые ссылки для категорий в магазине
+        const bodyItemsContainer = document.getElementById('body-items-popup');
+        const hairItemsContainer = document.getElementById('hair-items-popup');
+        const shirtItemsContainer = document.getElementById('shirt-items-popup');
+        const tshirtItemsContainer = document.getElementById('tshirt-items-popup');
+        const glassesItemsContainer = document.getElementById('glasses-items-popup');
+        const hatItemsContainer = document.getElementById('hat-items-popup');
         const onlinePromoItemsContainer = document.getElementById('online-promo-items-popup');
 
         // --- Глобальные переменные состояния игры ---
@@ -632,18 +867,22 @@
         let event2Triggered = false;
 
         let equippedItems = {
-            body: 'body-default',
+            body: null,
+            shirt: null,
+            tshirt: null,
+            hair: null,
             glasses: null,
             hat: null
         };
-        let ownedItems = ['body-default'];
+
+        let ownedItems = [];
 
         // --- Данные игры ---
 
         const locations = [
-            { id: 'lake-bright', name: 'Озеро Светлое', duration: 15000, reward: 50, visits: 0, image: 'map_lake_bright.png' },
-            { id: 'forest-path', name: 'Лесная Тропа', duration: 20000, reward: 75, visits: 0, image: 'map_forest_path.png' },
-            { id: 'mountain-peak', name: 'Горный Пик', duration: 25000, reward: 100, locked: true, unlockRequirement: { locationId: 'lake-bright', visits: 2 }, visits: 0, image: 'map_mountain_peak.png' },
+            { id: 'moscow', name: 'Москва', duration: 15000, reward: 50, visits: 0, image: 'map1.jpg' },
+            { id: 'sydney', name: 'Сидней', duration: 20000, reward: 75, visits: 0, image: 'map2.png' },
+            { id: 'new-york', name: 'Нью-Йорк', duration: 25000, reward: 100, locked: true, unlockRequirement: { locationId: 'moscow', visits: 2 }, visits: 0, image: 'map3.png' },
         ];
 
         const travelEvents = [
@@ -670,13 +909,34 @@
             }
         ];
 
+        // !!! ОБНОВЛЕННЫЕ ДАННЫЕ ДЛЯ ПРЕДМЕТОВ КАСТОМИЗАЦИИ (возвращаем и добавляем) !!!
         const customizationItems = [
-            { id: 'body-default', name: 'Обычное тело', type: 'body', value: '#ccc', price: 0, equippedByDefault: true },
-            { id: 'body-red', name: 'Красное тело', type: 'body', value: '#ff0000', price: 100 },
-            { id: 'body-blue', name: 'Синее тело', type: 'body', value: '#0000ff', price: 150 },
-            { id: 'glasses-sunglasses', name: 'Солнцезащитные очки', type: 'glasses', value: 'images/glasses/glasses_sunglasses.png', price: 200 },
-            { id: 'glasses-nerd', name: 'Очки для ботаника', type: 'glasses', value: 'images/glasses/glasses_nerd.png', price: 180 },
-            { id: 'hat-cap', name: 'Бейсболка', type: 'hat', value: 'images/hats/hat_cap.png', price: 250 },
+            // Тело
+            { id: 'body-base', name: 'Базовое тело', type: 'body', value: 'images/Body.png', price: 0, equippedByDefault: true },
+
+            // Футболки 
+            { id: 'tshirt-1', name: 'Футболка 1', type: 'tshirt', value: 'images/Tshirt1.png', price: 0, equippedByDefault: true },
+            { id: 'tshirt-2', name: 'Футболка 2', type: 'tshirt', value: 'images/Tshirt2.png', price: 95 },
+            { id: 'tshirt-3', name: 'Футболка 3', type: 'tshirt', value: 'images/Tshirt3.png', price: 105 },
+            { id: 'tshirt-4', name: 'Футболка 4', type: 'tshirt', value: 'images/Tshirt4.png', price: 115 },
+            { id: 'tshirt-5', name: 'Футболка 5', type: 'tshirt', value: 'images/Tshirt5.png', price: 125 },
+            { id: 'tshirt-6', name: 'Футболка 6', type: 'tshirt', value: 'images/Tshirt6.png', price: 135 },
+
+            // Рубашки (вернули)
+            { id: 'shirt-1', name: 'Рубашка 1', type: 'shirt', value: 'images/Shirt1.png', price: 100 },
+            { id: 'shirt-2', name: 'Рубашка 2', type: 'shirt', value: 'images/Shirt2.png', price: 120 }, // Предполагаем наличие Shirt2.png
+            { id: 'shirt-3', name: 'Рубашка 3', type: 'shirt', value: 'images/Shirt3.png', price: 140 }, // Предполагаем наличие Shirt3.png
+
+            // Волосы (вернули)
+            { id: 'hair-1', name: 'Волосы 1', type: 'hair', value: 'images/Hair1.png', price: 50 }, // Предполагаем наличие Hair1.png
+
+            // Очки (если есть файл)
+            // { id: 'glasses-nerd', name: 'Очки для ботаника', type: 'glasses', value: 'images/Glasses1.png', price: 180 }, // Если есть Glasses1.png, раскомментируйте
+
+            // Шляпы (добавили)
+            { id: 'hat-1', name: 'Шляпа 1', type: 'hat', value: 'images/Hat.png', price: 150 },
+            { id: 'hat-2', name: 'Шляпа 2', type: 'hat', value: 'images/Hat2.png', price: 170 }, // Предполагаем наличие Hat2.png
+            { id: 'hat-3', name: 'Шляпа 3', type: 'hat', value: 'images/Hat3.png', price: 190 }, // Предполагаем наличие Hat3.png
         ];
 
         const onlineServicePromos = [
@@ -716,9 +976,27 @@
                 }
 
                 if (gameData.equippedItems) {
-                    equippedItems = gameData.equippedItems;
+                    equippedItems = {
+                        body: gameData.equippedItems.body || null,
+                        shirt: gameData.equippedItems.shirt || null,
+                        tshirt: gameData.equippedItems.tshirt || null,
+                        hair: gameData.equippedItems.hair || null,
+                        glasses: gameData.equippedItems.glasses || null,
+                        hat: gameData.equippedItems.hat || null
+                    };
                 }
-                ownedItems = gameData.ownedItems || ['body-default'];
+
+                ownedItems = gameData.ownedItems || [];
+                // Проверяем, что базовое тело и стартовая футболка всегда в ownedItems
+                const defaultBody = customizationItems.find(item => item.id === 'body-base');
+                if (defaultBody && !ownedItems.includes(defaultBody.id)) {
+                    ownedItems.push(defaultBody.id);
+                }
+                const defaultTshirt = customizationItems.find(item => item.id === 'tshirt-1');
+                if (defaultTshirt && !ownedItems.includes(defaultTshirt.id)) {
+                    ownedItems.push(defaultTshirt.id);
+                }
+
 
                 if (gameData.onlineServicePromos) {
                     gameData.onlineServicePromos.forEach(savedPromo => {
@@ -728,42 +1006,61 @@
                         }
                     });
                 }
+            } else {
+                // Если нет сохраненных данных, инициализируем базовые предметы
+                const defaultBody = customizationItems.find(item => item.id === 'body-base');
+                if (defaultBody) {
+                    equippedItems.body = defaultBody.id;
+                    if (!ownedItems.includes(defaultBody.id)) {
+                        ownedItems.push(defaultBody.id);
+                    }
+                }
+                const defaultTshirt = customizationItems.find(item => item.id === 'tshirt-1');
+                if (defaultTshirt) {
+                    equippedItems.tshirt = defaultTshirt.id;
+                    if (!ownedItems.includes(defaultTshirt.id)) {
+                        ownedItems.push(defaultTshirt.id);
+                    }
+                }
             }
         }
 
         // --- Управление персонажем (кастомизация) ---
         function updatePersonAppearance() {
-            personGlassesLayer.innerHTML = '';
-            personHatLayer.innerHTML = '';
-            personGlassesLayer.style.display = 'none';
-            personHatLayer.style.display = 'none';
+            // Очищаем и скрываем все слои по умолчанию
+            document.querySelectorAll('.person-layer').forEach(layer => {
+                layer.innerHTML = '';
+                layer.style.display = 'none'; // Скрываем все слои по умолчанию
+            });
 
-            const bodyItem = customizationItems.find(item => item.id === equippedItems.body);
-            if (bodyItem) {
-                if (bodyItem.type === 'body' && bodyItem.value.startsWith('#')) {
-                    personBodyLayer.style.backgroundColor = bodyItem.value;
-                    personBodyLayer.innerHTML = 'Человек';
-                } else if (bodyItem.type === 'body' && bodyItem.value.startsWith('images/')) {
-                    personBodyLayer.style.backgroundColor = 'transparent';
-                    personBodyLayer.innerHTML = `<img src="${bodyItem.value}" alt="${bodyItem.name}">`;
+            // Определяем порядок слоев для наложения (первый элемент отрисовывается первым)
+            // Порядок: тело, затем рубашки/футболки, затем волосы, очки, головные уборы
+            const layerOrder = ['body', 'shirt', 'tshirt', 'hair', 'glasses', 'hat'];
+
+            layerOrder.forEach(layerType => {
+                let itemId = equippedItems[layerType];
+                let item = customizationItems.find(i => i.id === itemId);
+                const layerElement = document.querySelector(`.person-layer[data-layer-type="${layerType}"]`);
+
+                if (layerElement) {
+                    if (item && item.value) {
+                        layerElement.innerHTML = `<img src="${item.value}" alt="${item.name || layerType}">`;
+                        layerElement.style.display = 'flex'; // Показываем слой, если предмет надет
+                    } else if (layerType === 'body') {
+                        const defaultBody = customizationItems.find(i => i.id === 'body-base');
+                        if (defaultBody) {
+                            layerElement.innerHTML = `<img src="${defaultBody.value}" alt="${defaultBody.name}">`;
+                            layerElement.style.display = 'flex';
+                            equippedItems.body = defaultBody.id;
+                            if (!ownedItems.includes(defaultBody.id)) {
+                                ownedItems.push(defaultBody.id);
+                            }
+                        }
+                    }
                 }
-            } else {
-                personBodyLayer.style.backgroundColor = '#ccc';
-                personBodyLayer.innerHTML = 'Человек';
-            }
-
-            const glassesItem = customizationItems.find(item => item.id === equippedItems.glasses);
-            if (glassesItem && glassesItem.type === 'glasses' && glassesItem.value) {
-                personGlassesLayer.innerHTML = `<img src="${glassesItem.value}" alt="${glassesItem.name}">`;
-                personGlassesLayer.style.display = 'flex';
-            }
-
-            const hatItem = customizationItems.find(item => item.id === equippedItems.hat);
-            if (hatItem && hatItem.type === 'hat' && hatItem.value) {
-                personHatLayer.innerHTML = `<img src="${hatItem.value}" alt="${hatItem.name}">`;
-                personHatLayer.style.display = 'flex';
-            }
+            });
         }
+
 
         // --- Инициализация элементов DOM для модальных окон ---
 
@@ -798,43 +1095,83 @@
             });
         }
 
-        function populateShopItems() {
-            characterCustomizationItems.innerHTML = '';
-            customizationItems.forEach(item => {
-                const isOwned = ownedItems.includes(item.id);
-                const isEquipped = equippedItems[item.type] === item.id;
+        // Вспомогательная функция для создания элементов магазина
+        function createShopItemElement(item) {
+            const isOwned = ownedItems.includes(item.id);
+            const isEquipped = equippedItems[item.type] === item.id;
 
-                const itemClass = ['shop-item'];
-                if (isOwned) itemClass.push('purchased');
-                if (isEquipped) itemClass.push('equipped');
+            const itemClass = ['shop-item'];
+            if (isOwned) itemClass.push('purchased');
+            if (isEquipped) itemClass.push('equipped');
 
-                const div = document.createElement('div');
-                div.className = itemClass.join(' ');
+            const div = document.createElement('div');
+            div.className = itemClass.join(' ');
 
-                let itemVisual;
-                if (item.type === 'body' && item.value.startsWith('#')) {
-                    itemVisual = `<div style="width: 50px; height: 50px; background-color: ${item.value}; border-radius: 50%; margin: 0 auto 10px;"></div>`;
-                } else if (item.value.startsWith('images/')) {
-                    itemVisual = `<div style="width: 50px; height: 50px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center;"><img src="${item.value}" alt="${item.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
-                } else {
-                    itemVisual = `<div style="width: 50px; height: 50px; background-color: #eee; border-radius: 50%; margin: 0 auto 10px;">?</div>`;
-                }
+            let buttonText = 'Купить';
+            let buttonDisabled = '';
 
-                const buttonText = isEquipped ? 'Надето' : (isOwned ? 'Надеть' : 'Купить');
-                const buttonDisabled = isEquipped || (item.price === 0 && isOwned) ? 'disabled' : '';
+            if (isEquipped) {
+                buttonText = 'Надето';
+                buttonDisabled = 'disabled';
+            } else if (isOwned) {
+                buttonText = 'Надеть';
+            } else if (currentCoins < item.price) {
+                buttonDisabled = 'disabled';
+            }
 
-                div.innerHTML = `
-                    <h4>${item.name}</h4>
-                    ${itemVisual}
-                    <p class="price">${item.price === 0 ? 'Бесплатно' : item.price + ' монет'}</p>
-                    <button class="buy-button" data-item-id="${item.id}" ${buttonDisabled}>${buttonText}</button>
-                `;
-                characterCustomizationItems.appendChild(div);
-
-                const buyButton = div.querySelector('.buy-button');
-                buyButton.addEventListener('click', () => handleShopPurchase(item));
-            });
+            div.innerHTML = `
+                <h4>${item.name}</h4>
+                <div class="item-preview">
+                    <img src="${item.value}" alt="${item.name}">
+                </div>
+                <p class="price">${item.price === 0 ? 'Бесплатно' : item.price + ' монет'}</p>
+                <button class="buy-button" data-item-id="${item.id}" ${buttonDisabled}>${buttonText}</button>
+            `;
+            const buyButton = div.querySelector('.buy-button');
+            buyButton.addEventListener('click', () => handleShopPurchase(item));
+            return div;
         }
+
+        // Обновленная функция populateShopItems для разных категорий
+        function populateShopItems() {
+            // Очищаем все контейнеры перед заполнением
+            bodyItemsContainer.innerHTML = '';
+            hairItemsContainer.innerHTML = '';
+            shirtItemsContainer.innerHTML = '';
+            tshirtItemsContainer.innerHTML = '';
+            glassesItemsContainer.innerHTML = '';
+            hatItemsContainer.innerHTML = '';
+
+            // Группируем предметы по типу
+            const categorizedItems = customizationItems.reduce((acc, item) => {
+                if (!acc[item.type]) {
+                    acc[item.type] = [];
+                }
+                acc[item.type].push(item);
+                return acc;
+            }, {});
+
+            // Заполняем каждый контейнер
+            if (categorizedItems.body) {
+                categorizedItems.body.forEach(item => bodyItemsContainer.appendChild(createShopItemElement(item)));
+            }
+            if (categorizedItems.hair) {
+                categorizedItems.hair.forEach(item => hairItemsContainer.appendChild(createShopItemElement(item)));
+            }
+            if (categorizedItems.shirt) {
+                categorizedItems.shirt.forEach(item => shirtItemsContainer.appendChild(createShopItemElement(item)));
+            }
+            if (categorizedItems.tshirt) {
+                categorizedItems.tshirt.forEach(item => tshirtItemsContainer.appendChild(createShopItemElement(item)));
+            }
+            if (categorizedItems.glasses) {
+                categorizedItems.glasses.forEach(item => glassesItemsContainer.appendChild(createShopItemElement(item)));
+            }
+            if (categorizedItems.hat) {
+                categorizedItems.hat.forEach(item => hatItemsContainer.appendChild(createShopItemElement(item)));
+            }
+        }
+
 
         function populateOnlinePromoItems() {
             onlinePromoItemsContainer.innerHTML = '';
@@ -851,7 +1188,7 @@
                     <p>${promo.description}</p>
                     <p class="price">${isPurchased ? 'Куплено' : promo.price + ' монет'}</p>
                     <button class="buy-button" data-item-id="${promo.id}" data-item-type="online-promo" ${buttonDisabled}>${buttonText}</button>
-                    ${isPurchased ? `<input type="text" value="${promo.code}" readonly style="width: 90%; text-align: center; margin-top: 10px;">` : ''}
+                    ${isPurchased ? `<input type="text" value="${promo.code}" readonly>` : ''}
                 `;
                 onlinePromoItemsContainer.appendChild(div);
 
@@ -878,6 +1215,9 @@
                 populateOnlinePromoItems();
             } else if (modalElement === travelPopup) {
                 populateTravelLocations();
+            } else if (modalElement === albumPopup) {
+                populateAlbumGrid(); // Обновляем альбом при открытии
+                updateAlbumStats(); // Обновляем статистику альбома
             }
         }
 
@@ -940,10 +1280,9 @@
             event1Triggered = false;
             event2Triggered = false;
 
-            travelMap.style.backgroundImage = `url('images/travel_maps/${currentTravelLocation.image}')`;
-            travelMap.style.backgroundColor = 'transparent';
-
             personContainer.style.display = 'none';
+            travelMap.style.backgroundImage = `url('images/${currentTravelLocation.image}')`;
+            travelMap.style.backgroundColor = 'transparent';
             travelMap.style.display = 'block';
             timeRemainingDisplay.style.display = 'block';
             sendOnTravelButton.disabled = true;
@@ -1022,15 +1361,55 @@
             });
         }
 
+        // Обновленная функция для добавления карточек в альбом
         function addAlbumCard(locationName, imageUrl) {
+            // Проверяем, есть ли уже такая карточка в альбоме (по имени или изображению, лучше по ID локации, если возможно)
+            // В данном случае, так как albumGrid очищается и заново заполняется при открытии, 
+            // нам не нужно проверять дублирование в DOM, достаточно того, что `locations`
+            // хранит уникальные данные и мы фильтруем по `visits > 0`.
+
+            // Эта функция просто создает HTML для одной карточки.
+            // Проверка уникальности происходит в populateAlbumGrid.
             const albumItem = document.createElement('div');
             albumItem.classList.add('album-item');
             albumItem.innerHTML = `
-                <img src="images/travel_maps/${imageUrl}" alt="${locationName}">
-                <p>${locationName}</p>
+                <div>
+                    <img src="images/${imageUrl}" alt="${locationName}">
+                    <div class="location-name-overlay">${locationName}</div>
+                </div>
             `;
             albumGrid.appendChild(albumItem);
         }
+
+        // Функция для заполнения альбома при его открытии (загрузка из LocalStorage)
+        function populateAlbumGrid() {
+            albumGrid.innerHTML = ''; // Очищаем альбом перед заполнением
+            // Используем Set для хранения уникальных ID посещенных локаций
+            const uniqueVisitedLocationIds = new Set();
+            locations.forEach(loc => {
+                if (loc.visits > 0) {
+                    uniqueVisitedLocationIds.add(loc.id);
+                }
+            });
+
+            // Теперь добавляем карточки только для уникальных посещенных локаций
+            uniqueVisitedLocationIds.forEach(locationId => {
+                const loc = locations.find(l => l.id === locationId);
+                if (loc) {
+                    addAlbumCard(loc.name, loc.image);
+                }
+            });
+            updateAlbumStats(); // Обновляем статистику после заполнения
+        }
+
+        function updateAlbumStats() {
+            const uniqueVisitedCount = new Set(locations.filter(loc => loc.visits > 0).map(loc => loc.id)).size;
+            albumCardCountDisplay.textContent = uniqueVisitedCount;
+
+            const insuranceDiscount = (uniqueVisitedCount * 1.5).toFixed(1); // Округляем до одного знака после запятой
+            insuranceDiscountDisplay.textContent = insuranceDiscount;
+        }
+
 
         function showConfirmationModal(questionText, showCancelButton, callback) {
             document.querySelectorAll('.modal-overlay').forEach(modal => {
@@ -1081,11 +1460,33 @@
             if (isOwned) {
                 showConfirmationModal(`Надеть ${item.name}?`, true, (confirmed) => {
                     if (confirmed) {
-                        equippedItems[item.type] = item.id;
-                        updatePersonAppearance();
-                        showConfirmationModal(`Вы надели ${item.name}!`, false, () => {
-                            populateShopItems();
-                        });
+                        // Логика для снятия/надевания
+                        // Снимаем аналогичный предмет, если он был надет
+                        if (equippedItems[item.type] && equippedItems[item.type] !== item.id) {
+                            equippedItems[item.type] = null; // Снимаем текущий, чтобы можно было надеть новый
+                        }
+
+                        // Специальная логика для рубашек/футболок
+                        if (item.type === 'shirt') {
+                            equippedItems.tshirt = null;
+                        } else if (item.type === 'tshirt') {
+                            equippedItems.shirt = null;
+                        }
+
+                        // Если предмет уже был надет и мы нажимаем "Надеть" снова, это означает "снять"
+                        if (equippedItems[item.type] === item.id) {
+                            equippedItems[item.type] = null;
+                            showConfirmationModal(`Вы сняли ${item.name}!`, false, () => {
+                                updatePersonAppearance();
+                                populateShopItems();
+                            });
+                        } else {
+                            equippedItems[item.type] = item.id;
+                            showConfirmationModal(`Вы надели ${item.name}!`, false, () => {
+                                updatePersonAppearance();
+                                populateShopItems();
+                            });
+                        }
                         saveGameData();
                     }
                 });
@@ -1098,7 +1499,14 @@
                             shopCoinsDisplay.textContent = currentCoins;
                             ownedItems.push(item.id);
 
+                            // Логика для надевания после покупки, включая снятие конфликтующих предметов
+                            if (item.type === 'shirt') {
+                                equippedItems.tshirt = null;
+                            } else if (item.type === 'tshirt') {
+                                equippedItems.shirt = null;
+                            }
                             equippedItems[item.type] = item.id;
+
                             updatePersonAppearance();
 
                             showConfirmationModal(`Вы купили ${item.name} и надели его!`, false, () => {
@@ -1112,6 +1520,7 @@
                 }
             }
         }
+
 
         function handleOnlinePromoPurchase(promo) {
             if (promo.purchased) {
@@ -1143,7 +1552,6 @@
 
         // --- Обработчики событий ---
 
-        // Переназначаем обработчики для новых кнопок
         sendOnTravelButton.addEventListener('click', () => {
             showModal(travelPopup);
         });
@@ -1152,7 +1560,7 @@
             showModal(albumPopup);
         });
 
-        shopPopupButton.addEventListener('click', () => { // Привязываем к новой кнопке
+        shopPopupButton.addEventListener('click', () => {
             showModal(shopPopup);
         });
 
@@ -1184,15 +1592,33 @@
         });
 
         // --- Инициализация при загрузке страницы ---
-        loadGameData();
-        updatePersonAppearance();
-        coinsDisplay.textContent = currentCoins;
+        function initializeGame() {
+            loadGameData();
+            // Убеждаемся, что базовое тело и стартовая футболка надеты, если игра загружается впервые
+            const defaultBody = customizationItems.find(item => item.id === 'body-base');
+            const defaultTshirt = customizationItems.find(item => item.id === 'tshirt-1');
 
-        // Эти функции теперь вызываются только при открытии соответствующих модальных окон
-        // populateTravelLocations();
-        // populateShopItems();
-        // populateOnlinePromoItems();
+            if (!equippedItems.body && defaultBody) {
+                equippedItems.body = defaultBody.id;
+                if (!ownedItems.includes(defaultBody.id)) {
+                    ownedItems.push(defaultBody.id);
+                }
+            }
+            if (!equippedItems.tshirt && defaultTshirt) {
+                equippedItems.tshirt = defaultTshirt.id;
+                if (!ownedItems.includes(defaultTshirt.id)) {
+                    ownedItems.push(defaultTshirt.id);
+                }
+            }
 
+            updatePersonAppearance();
+            coinsDisplay.textContent = currentCoins;
+            saveGameData();
+            populateAlbumGrid(); // Загружаем альбом при инициализации
+            updateAlbumStats(); // Обновляем статистику после загрузки
+        }
+
+        initializeGame();
     </script>
 </body>
 
