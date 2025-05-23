@@ -484,10 +484,10 @@
         const tabContents = document.querySelectorAll('.tab-content');
         const sendOnTravelButton = document.getElementById('send-on-travel-button');
         const viewAlbumButton = document.getElementById('view-album-button');
-        const personContainer = document.querySelector('.person-container'); // Новый контейнер
-        const personBodyLayer = document.querySelector('.person-layer[data-layer-type="body"]'); // Слой тела
-        const personGlassesLayer = document.querySelector('.person-layer[data-layer-type="glasses"]'); // Слой очков
-        const personHatLayer = document.querySelector('.person-layer[data-layer-type="hat"]'); // Слой шляпы
+        const personContainer = document.querySelector('.person-container');
+        const personBodyLayer = document.querySelector('.person-layer[data-layer-type="body"]');
+        const personGlassesLayer = document.querySelector('.person-layer[data-layer-type="glasses"]');
+        const personHatLayer = document.querySelector('.person-layer[data-layer-type="hat"]');
 
         const travelMap = document.getElementById('travel-map');
         const mapPersonDot = document.querySelector('.map-person-dot');
@@ -495,7 +495,7 @@
         const coinsDisplay = document.getElementById('coins');
         const shopCoinsDisplay = document.getElementById('shop-coins');
         const albumGrid = document.getElementById('album-grid');
-        const timeRemainingDisplay = document.getElementById('time-remaining-display'); // Элемент для таймера
+        const timeRemainingDisplay = document.getElementById('time-remaining-display');
 
         const eventModal = document.getElementById('event-modal');
         const eventQuestion = document.getElementById('event-question');
@@ -513,14 +513,17 @@
         let currentTravelLocation = null;
         let initialTravelDuration;
 
+        // Флаги для событий в путешествии
+        let event1Triggered = false;
+        let event2Triggered = false;
+
         // Состояние кастомизации
-        // Теперь храним ID экипированных предметов для каждого слоя
         let equippedItems = {
-            body: 'body-default', // Изначально выбран дефолтный цвет
+            body: 'body-default',
             glasses: null,
             hat: null
         };
-        let ownedItems = ['body-default']; // Купленные предметы, дефолтный всегда есть
+        let ownedItems = ['body-default'];
 
         // --- Данные игры ---
 
@@ -592,7 +595,6 @@
                 const gameData = JSON.parse(savedData);
                 currentCoins = gameData.coins || 0;
 
-                // Восстанавливаем посещения и состояние блокировки мест
                 if (gameData.locations) {
                     gameData.locations.forEach(savedLoc => {
                         const loc = locations.find(l => l.id === savedLoc.id);
@@ -605,14 +607,11 @@
                     });
                 }
 
-                // Восстанавливаем экипированные предметы
                 if (gameData.equippedItems) {
                     equippedItems = gameData.equippedItems;
                 }
-                // Восстанавливаем купленные предметы
-                ownedItems = gameData.ownedItems || ['body-default']; // Убедимся, что дефолтный всегда есть
+                ownedItems = gameData.ownedItems || ['body-default'];
 
-                // Восстанавливаем состояние купленных онлайн-промокодов
                 if (gameData.onlineServicePromos) {
                     gameData.onlineServicePromos.forEach(savedPromo => {
                         const promo = onlineServicePromos.find(p => p.id === savedPromo.id);
@@ -627,47 +626,40 @@
 
         // --- Управление персонажем (кастомизация) ---
         function updatePersonAppearance() {
-            // Очищаем все слои, кроме body (который может быть цветом)
             personGlassesLayer.innerHTML = '';
             personHatLayer.innerHTML = '';
-            personGlassesLayer.style.display = 'none'; // Скрываем по умолчанию
+            personGlassesLayer.style.display = 'none';
             personHatLayer.style.display = 'none';
 
-            // Обновляем слой тела
             const bodyItem = customizationItems.find(item => item.id === equippedItems.body);
             if (bodyItem) {
                 if (bodyItem.type === 'body' && bodyItem.value.startsWith('#')) {
                     personBodyLayer.style.backgroundColor = bodyItem.value;
-                    personBodyLayer.innerHTML = 'Человек'; // Убедимся, что текст виден
+                    personBodyLayer.innerHTML = 'Человек';
                 } else if (bodyItem.type === 'body' && bodyItem.value.startsWith('images/')) {
-                    personBodyLayer.style.backgroundColor = 'transparent'; // Убираем фон, если это изображение
+                    personBodyLayer.style.backgroundColor = 'transparent';
                     personBodyLayer.innerHTML = `<img src="${bodyItem.value}" alt="${bodyItem.name}">`;
                 }
             } else {
-                personBodyLayer.style.backgroundColor = '#ccc'; // Дефолтный, если что-то пошло не так
+                personBodyLayer.style.backgroundColor = '#ccc';
                 personBodyLayer.innerHTML = 'Человек';
             }
 
-
-            // Обновляем слой очков
             const glassesItem = customizationItems.find(item => item.id === equippedItems.glasses);
             if (glassesItem && glassesItem.type === 'glasses' && glassesItem.value) {
                 personGlassesLayer.innerHTML = `<img src="${glassesItem.value}" alt="${glassesItem.name}">`;
-                personGlassesLayer.style.display = 'flex'; // Показываем слой
+                personGlassesLayer.style.display = 'flex';
             }
 
-            // Обновляем слой шляпы
             const hatItem = customizationItems.find(item => item.id === equippedItems.hat);
             if (hatItem && hatItem.type === 'hat' && hatItem.value) {
                 personHatLayer.innerHTML = `<img src="${hatItem.value}" alt="${hatItem.name}">`;
-                personHatLayer.style.display = 'flex'; // Показываем слой
+                personHatLayer.style.display = 'flex';
             }
         }
 
-
         // --- Инициализация элементов DOM ---
 
-        // Заполняем список мест для путешествий
         function populateTravelLocations() {
             travelLocationsList.innerHTML = '';
             const lakeBright = locations.find(loc => loc.id === 'lake-bright');
@@ -700,7 +692,6 @@
             });
         }
 
-        // Заполняем магазин кастомизации
         function populateShopItems() {
             characterCustomizationItems.innerHTML = '';
             customizationItems.forEach(item => {
@@ -720,11 +711,11 @@
                 } else if (item.value.startsWith('images/')) {
                     itemVisual = `<div style="width: 50px; height: 50px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center;"><img src="${item.value}" alt="${item.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
                 } else {
-                    itemVisual = `<div style="width: 50px; height: 50px; background-color: #eee; border-radius: 50%; margin: 0 auto 10px;">?</div>`; // Заглушка
+                    itemVisual = `<div style="width: 50px; height: 50px; background-color: #eee; border-radius: 50%; margin: 0 auto 10px;">?</div>`;
                 }
 
                 const buyButtonText = isEquipped ? 'Надето' : (isOwned ? 'Надеть' : 'Купить');
-                const buyButtonDisabled = isEquipped || (isOwned && item.type !== 'body' && item.type !== 'glasses' && item.type !== 'hat') ? 'disabled' : ''; // Если уже надето, или если это не сложный предмет, который можно "надеть", а просто цвет
+                const buyButtonDisabled = isEquipped || (item.price === 0 && isOwned) ? 'disabled' : ''; // Disable if already equipped, or if free and owned.
 
                 div.innerHTML = `
                     <h4>${item.name}</h4>
@@ -739,7 +730,6 @@
             });
         }
 
-        // Заполняем магазин промокодов для онлайн-сервисов
         function populateOnlinePromoItems() {
             onlinePromoItemsContainer.innerHTML = '';
             onlineServicePromos.forEach(promo => {
@@ -767,7 +757,6 @@
 
         // --- Функции управления вкладками и общим состоянием ---
 
-        // Функция для переключения вкладок
         function switchTab(tabId) {
             tabContents.forEach(content => {
                 content.classList.remove('active');
@@ -779,30 +768,27 @@
             document.getElementById(tabId).classList.add('active');
             document.querySelector(`.tab-button[data-tab="${tabId.replace('-tab', '')}"]`).classList.add('active');
 
-            // Обновляем видимость человека/карты и состояние кнопки "Отправить в путешествие"
             if (isTraveling) {
                 personContainer.style.display = 'none';
-                travelMap.style.display = 'block'; // Теперь карта - блок
-                timeRemainingDisplay.style.display = 'block'; // Показываем таймер
+                travelMap.style.display = 'block';
+                timeRemainingDisplay.style.display = 'block';
                 sendOnTravelButton.disabled = true;
             } else {
                 personContainer.style.display = 'flex';
                 travelMap.style.display = 'none';
-                timeRemainingDisplay.style.display = 'none'; // Скрываем таймер
+                timeRemainingDisplay.style.display = 'none';
                 sendOnTravelButton.disabled = false;
             }
 
-            // Обновляем отображение монет в магазине при переключении
             if (tabId === 'shop-tab') {
                 shopCoinsDisplay.textContent = currentCoins;
-                populateShopItems(); // Обновляем список предметов кастомизации
-                populateOnlinePromoItems(); // Обновляем список онлайн-промокодов
+                populateShopItems();
+                populateOnlinePromoItems();
             }
         }
 
         // --- Функции для путешествий ---
 
-        // Обновление прогресса и таймера
         function updateTravelProgress() {
             if (timeRemaining <= 0) {
                 clearInterval(travelTimerIntervalId);
@@ -810,31 +796,42 @@
                 return;
             }
 
-            // Время уменьшается с учетом множителя скорости
             timeRemaining -= 100 * travelSpeedMultiplier;
 
-            // Обновляем отображение оставшегося времени
             timeRemainingDisplay.textContent = `Осталось: ${Math.ceil(timeRemaining / 1000)} сек.`;
 
-            // Убеждаемся, что время не ушло в минус при расчете прогресса
             const effectiveTimeRemaining = Math.max(0, timeRemaining);
-            const progress = (initialTravelDuration - effectiveTimeRemaining) / initialTravelDuration; // Прогресс от 0 до 1
+            const elapsedTime = initialTravelDuration - effectiveTimeRemaining; // Сколько времени прошло
+
+            // Прогресс от 0 до 1
+            const progress = elapsedTime / initialTravelDuration;
 
             // Анимация точки по линии (горизонтально)
-            // 0% left на старте, 100% left в конце
             const dotPosition = progress * 100;
             mapPersonDot.style.left = `${dotPosition}%`;
 
-            // Проверка на событие: только если не было запланировано и время в нужных рамках
-            // Шанс события: 0.5% каждые 100мс
-            if (!eventModal.classList.contains('active') && Math.random() < 0.005 && timeRemaining > initialTravelDuration * 0.2 && timeRemaining < initialTravelDuration * 0.8) {
+            // --- Новая логика для событий ---
+            const oneThirdDuration = initialTravelDuration / 3;
+            const twoThirdsDuration = initialTravelDuration * 2 / 3;
+
+            // Событие 1: на 1/3 пути
+            if (!event1Triggered && elapsedTime >= oneThirdDuration) {
+                event1Triggered = true;
                 clearInterval(travelTimerIntervalId);
                 showEvent();
                 return;
             }
+
+            // Событие 2: на 2/3 пути
+            if (!event2Triggered && elapsedTime >= twoThirdsDuration) {
+                event2Triggered = true;
+                clearInterval(travelTimerIntervalId);
+                showEvent();
+                return;
+            }
+            // --- Конец новой логики для событий ---
         }
 
-        // Запуск путешествия
         function startTravel(locationId) {
             if (isTraveling) return;
 
@@ -844,9 +841,12 @@
             timeRemaining = initialTravelDuration;
             travelSpeedMultiplier = 1;
 
-            // Устанавливаем фоновое изображение для карты
+            // Сбрасываем флаги событий для нового путешествия
+            event1Triggered = false;
+            event2Triggered = false;
+
             travelMap.style.backgroundImage = `url('images/travel_maps/${currentTravelLocation.image}')`;
-            travelMap.style.backgroundColor = 'transparent'; // Убираем фоновый цвет, если есть изображение
+            travelMap.style.backgroundColor = 'transparent';
 
             switchTab('main-tab');
 
@@ -854,7 +854,6 @@
             saveGameData();
         }
 
-        // Отображение модального окна события
         function showEvent() {
             const event = travelEvents[Math.floor(Math.random() * travelEvents.length)];
             eventQuestion.textContent = event.question;
@@ -871,7 +870,6 @@
             eventModal.classList.add('active');
         }
 
-        // Обработка выбора ответа на событие
         function handleEventChoice(isCorrect, speedChange) {
             if (isCorrect) {
                 travelSpeedMultiplier *= speedChange;
@@ -886,18 +884,16 @@
             travelTimerIntervalId = setInterval(updateTravelProgress, 100);
         }
 
-        // Завершение путешествия
         function endTravel(locationId) {
             isTraveling = false;
             travelSpeedMultiplier = 1;
-            mapPersonDot.style.left = '0%'; // Сброс положения точки
+            mapPersonDot.style.left = '0%';
 
-            // Удаляем фоновое изображение карты
             travelMap.style.backgroundImage = 'none';
-            travelMap.style.backgroundColor = '#a0c0e0'; // Возвращаем дефолтный цвет
+            travelMap.style.backgroundColor = '#a0c0e0';
 
             switchTab('main-tab');
-            timeRemainingDisplay.style.display = 'none'; // Скрываем таймер
+            timeRemainingDisplay.style.display = 'none';
 
             const location = locations.find(loc => loc.id === locationId);
             currentCoins += location.reward;
@@ -910,7 +906,6 @@
             saveGameData();
         }
 
-        // Проверка и разблокировка новых мест
         function checkUnlockNewLocations() {
             locations.forEach(loc => {
                 if (loc.locked && loc.unlockRequirement) {
@@ -924,7 +919,6 @@
             populateTravelLocations();
         }
 
-        // Добавление карточки в альбом
         function addAlbumCard(locationName, imageUrl) {
             const albumItem = document.createElement('div');
             albumItem.classList.add('album-item');
@@ -937,19 +931,16 @@
 
         // --- Функции магазина ---
 
-        // Обработка покупки/надевания предмета кастомизации
         function handleShopPurchase(item) {
             const isOwned = ownedItems.includes(item.id);
 
             if (isOwned) {
-                // Если предмет уже куплен, его можно "надеть"
-                equippedItems[item.type] = item.id; // Надеваем предмет
-                updatePersonAppearance(); // Обновляем внешний вид персонажа
+                equippedItems[item.type] = item.id;
+                updatePersonAppearance();
                 alert(`Вы надели ${item.name}!`);
-                populateShopItems(); // Обновить магазин, чтобы кнопка "Надето" стала активной/неактивной
+                populateShopItems();
                 saveGameData();
             } else {
-                // Если предмет не куплен, пытаемся купить
                 if (currentCoins >= item.price) {
                     currentCoins -= item.price;
                     coinsDisplay.textContent = currentCoins;
@@ -957,7 +948,7 @@
                     ownedItems.push(item.id);
                     alert(`Вы купили ${item.name}!`);
 
-                    equippedItems[item.type] = item.id; // Надеваем купленный предмет сразу
+                    equippedItems[item.type] = item.id;
                     updatePersonAppearance();
 
                     populateShopItems();
@@ -968,10 +959,8 @@
             }
         }
 
-        // Обработка покупки онлайн-промокода
         function handleOnlinePromoPurchase(promo) {
             if (promo.purchased) {
-                // Если уже куплен, скопировать код
                 navigator.clipboard.writeText(promo.code).then(() => {
                     alert(`Промокод "${promo.code}" скопирован в буфер обмена!`);
                 }).catch(err => {
@@ -979,14 +968,13 @@
                     alert('Не удалось скопировать промокод. Попробуйте скопировать вручную: ' + promo.code);
                 });
             } else {
-                // Если не куплен, пытаемся купить
                 if (currentCoins >= promo.price) {
                     currentCoins -= promo.price;
                     coinsDisplay.textContent = currentCoins;
                     shopCoinsDisplay.textContent = currentCoins;
-                    promo.purchased = true; // Отмечаем как купленный
+                    promo.purchased = true;
                     alert(`Вы купили промокод для "${promo.name}"! Теперь вы можете его скопировать.`);
-                    populateOnlinePromoItems(); // Обновляем список промокодов
+                    populateOnlinePromoItems();
                     saveGameData();
                 } else {
                     alert('Недостаточно монет для покупки этого промокода!');
@@ -1029,13 +1017,13 @@
 
 
         // --- Инициализация при загрузке страницы ---
-        loadGameData(); // Загружаем данные при старте
-        updatePersonAppearance(); // Обновляем внешний вид персонажа при загрузке
+        loadGameData();
+        updatePersonAppearance();
         switchTab('main-tab');
         coinsDisplay.textContent = currentCoins;
         populateTravelLocations();
         populateShopItems();
-        populateOnlinePromoItems(); // Заполняем магазин онлайн-промокодов
+        populateOnlinePromoItems();
     </script>
 </body>
 
